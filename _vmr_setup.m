@@ -26,11 +26,12 @@ function vmr_inner(is_debug)
         cache = struct('id', 'test', 'tgt', 'test.tgt');
     end
 
+    % buglet: device info not filled when deviceClass unspecified?
     devs = PsychHID('Devices');
     found_tablet = false;
-    for i = 1:length(devs)
+    for dev = devs
         % Wacom PTH 860
-        if devs(i).vendorID == 0x056a && devs(i).productID == 0x0358
+        if dev.vendorID == 0x056a && dev.productID == 0x0358
             found_tablet = true;
             break
         end
@@ -43,10 +44,12 @@ function vmr_inner(is_debug)
             fprintf('Continuing with mouse...\n\n');
         end
     end
-
-    id = input(sprintf('Enter the participant ID, or leave blank to use the previous value (%s): ', num2str(cache.id)), "s");
-    if ~isempty(id)
-        cache.id = id;
+    
+    if ~is_debug
+        id = input(sprintf('Enter the participant ID, or leave blank to use the previous value (%s): ', num2str(cache.id)), "s");
+        if ~isempty(id)
+            cache.id = id;
+        end
     end
 
     save_cache(cache_path, cache);

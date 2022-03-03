@@ -2,6 +2,7 @@
 function _vmr_exp(is_debug, settings)
 
     % turn off splash
+    KbName('UnifyKeyNames');
     Screen('Preference', 'VisualDebugLevel', 3);
     screens = Screen('Screens');
     max_scr = max(screens);
@@ -29,7 +30,72 @@ function _vmr_exp(is_debug, settings)
     % randr seems to nail it though
     % [w.disp.width, w.disp.height] = Screen('DisplaySize', max_scr);
 
-    x = states.REACH_TO_CENTER;
+    state = states.RETURN_TO_CENTER;
 
+    % TODO: shuffle this with settings rather than repeating
+    devs = PsychHID('Devices');
+    found_tablet = false;
+    for dev = devs
+        if dev.vendorID == 0x056a && dev.productID == 0x0358
+            found_tablet = true;
+            break
+        end
+    end
+
+    
+    if found_tablet
+        % hmm, 
+        devs = PsychHID('Devices', 3); % get all slave pointers
+        for dev = devs
+            % not sure if interfaceID is stable, so parse the product name...
+            % and vendor/product not filled??
+            if index(dev.product, 'Wacom') && index(dev.product, 'stylus')
+                break % we have our man
+            end
+        end
+
+    else % get the master mouse pointer or something
+        dev = PsychHID('Devices', 1);
+    end
+
+    dev = dev(1); % make sure we're down to one device
+    disp(dev);
+
+    KbQueueCreate(dev.index, [], 2);
+    KbQueueStart(dev.index);
+
+    % flip once more to get a reference time
+    % we're assuming linux computers with OpenML support
+    [vbltime, ref_time] = Screen('Flip', w.w);
+    disp_time = ref_time;
+
+    KbQueueFlush(dev.index, 2); % only flush KbEventGet
+    while state
+        % break if esc pressed
+        [~, ~, keys] = KbCheck(-1); % query all keyboards
+        if keys(10) % hopefully right-- we unified key positions before?
+            error('Escape was pressed.');
+        end
+
+        % process all pending input events
+        while KbEventAvail(dev.index)
+            [evt, n_evts] = KbEventGet(dev.index);
+        end
+
+        % for the state machine, implement fallthrough by consecutive `if ...`
+        if state == states.RETURN_TO_CENTER
+            if disp_time > (ref_time + 10)
+                state = states.END;
+            end
+        end
+        % draw things based on state
+
+        Screen('DrawingFinished', w.w);
+        % swap buffers
+        [~, disp_time] = Screen('Flip', w.w);
+    end
+
+    KbQueueStop(dev.index);
+    KbQueueRelease(dev.index);
     sca; % clean up
 end
