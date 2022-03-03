@@ -42,3 +42,7 @@ PsychImaging('PrepareConfiguration');
 PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
 [theWindow,theRect] = PsychImaging('OpenWindow', whichScreen, 0);
 ```
+
+We need to fiddle with `xsetwacom` to put the tablet in the right spot,
+
+https://wiki.archlinux.org/title/wacom_tablet#Adjusting_aspect_ratios
