@@ -13,6 +13,10 @@ function _vmr_exp(is_debug, settings)
         [w.w, w.rect] = Screen('OpenWindow', max_scr, 0, [0, 0, 800, 800]);
     else
         % real deal, make sure sync tests work
+        % for the display (which is rotated 180 deg), we need
+        % to do this. Can't use OS rotation, otherwise PTB gets mad
+        PsychImaging('PrepareConfiguration');
+        PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
         [w.w, w.rect] = Screen('OpenWindow', max_scr, 0);
     end
 
@@ -80,6 +84,7 @@ function _vmr_exp(is_debug, settings)
         % process all pending input events
         while KbEventAvail(dev.index)
             [evt, n_evts] = KbEventGet(dev.index);
+            disp(evt);
         end
 
         % for the state machine, implement fallthrough by consecutive `if ...`
