@@ -13,6 +13,8 @@ Wacom device info with `lsusb -d 056a:0358 -v`
 
 # data format
 
+Right now, I'm thinking of doing one `.json.gz` per subject (and people are only coming in once?).
+
 ## "raw" data
 1 row per frame (because we might go faster than input events come in) (what if target changes state, but we don't have mouse data for that time?)
 array of structs for input events that frame (time, "raw" position)
@@ -21,9 +23,10 @@ trial state
 
 ## "easy" data
 
+...
 
 
-data directory layout
+## data directory layout
 
 data/
   subject/

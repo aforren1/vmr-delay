@@ -20,7 +20,7 @@ function vmr_inner(is_debug)
     cache_path = fullfile(ref_path, 'cache.json');    
     % load cache file, otherwise fill in default
     try
-        cache = load_cache(cache_path);
+        cache = from_json(cache_path);
     catch err
         % no cache, fill in default
         cache = struct('id', 'test', 'tgt', 'test.tgt');
@@ -52,29 +52,6 @@ function vmr_inner(is_debug)
         end
     end
 
-    save_cache(cache_path, cache);
+    to_json(cache_path, cache);
     _vmr_exp(is_debug, cache);
-end
-
-function data = load_cache(filename)
-    if IsOctave()
-        cache = fileread(filename);
-        data = fromJSON(cache);
-    else
-        % https://www.mathworks.com/matlabcentral/answers/474980-extract-info-from-json-file-by-matlab
-        error('load_cache not implemented for MATLAB.');
-    end
-end
-
-function save_cache(filename, cache)
-    if IsOctave()
-        txt = toJSON(cache);
-    else
-        error('save_cache not implemented for MATLAB.');
-        % probably txt = jsonencode(cache); ?
-    end
-
-    fid = fopen(filename, 'w');
-    fputs(fid, txt);
-    fclose(fid);
 end
