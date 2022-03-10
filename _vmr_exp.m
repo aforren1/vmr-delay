@@ -74,6 +74,7 @@ function _vmr_exp(is_debug, settings)
     disp_time = ref_time;
 
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
+    t = 0
     while state
         % break if esc pressed
         [~, ~, keys] = KbCheck(-1); % query all keyboards
@@ -84,7 +85,8 @@ function _vmr_exp(is_debug, settings)
         % process all pending input events
         while KbEventAvail(dev.index)
             [evt, n_evts] = KbEventGet(dev.index);
-            disp(evt);
+            disp(evt.Time - t);
+            t = evt.Time;
         end
 
         % for the state machine, implement fallthrough by consecutive `if ...`
