@@ -3,7 +3,7 @@
 % I don't want to take the time to fix/standardize at this point
 function _vmr_setup(debug)
     if IsOctave()
-        pkg load io
+        pkg load io % only if we stick with json everywhere
     end
     try
         vmr_inner(debug == 'd');
@@ -43,6 +43,11 @@ function vmr_inner(is_debug)
         else
             fprintf('Continuing with mouse...\n\n');
         end
+    end
+
+    if found_tablet && IsLinux()
+        % set up tablet for linux
+        system('bash setup_wacom.sh');
     end
     
     if ~is_debug
