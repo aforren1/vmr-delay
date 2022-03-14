@@ -49,11 +49,11 @@ function _vmr_exp(is_debug, settings)
     
     if found_tablet
         % hmm, 
-        devs = PsychHID('Devices', 3); % get all slave pointers
+        devs = PsychHID('Devices', 5); % get all slave pointers
         for dev = devs
             % not sure if interfaceID is stable, so parse the product name...
             % and vendor/product not filled??
-            if index(dev.product, 'Wacom') && index(dev.product, 'stylus')
+            if index(dev.product, 'Wacom') && index(dev.product, 'Pen')
                 break % we have our man
             end
         end
@@ -64,9 +64,9 @@ function _vmr_exp(is_debug, settings)
 
     dev = dev(1); % make sure we're down to one device (should always be the case)
     disp(dev);
-    HideCursor(w.w); % hide the cursor, because I don't want to fuss with proper mapping on the OS side
-
-    KbQueueCreate(dev.index, [], 2, [], [], 0);
+    %HideCursor(w.w); % hide the cursor, because I don't want to fuss with proper mapping on the OS side
+    %Screen('ConstrainCursor', w.w, 1);
+    KbQueueCreate(dev.index, [], 2);%, [], [], 0);
     KbQueueStart(dev.index);
 
     % flip once more to get a reference time
@@ -85,8 +85,8 @@ function _vmr_exp(is_debug, settings)
 
         % process all pending input events
         while KbEventAvail(dev.index)
-            [evt, n_evts] = KbEventGet(dev.index);
-            disp(evt); % we should use x = valuators(1) and y = valuators(2), which
+            [evt, n_evts] = PsychHID('KbQueueGetEvent', dev.index, 0);
+            disp(evt.Valuators); % we should use x = valuators(1) and y = valuators(2), which
                        % might be independent of screen mapping?
             %disp(evt.Time - t);
             t = evt.Time;

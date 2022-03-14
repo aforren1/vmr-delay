@@ -1,7 +1,8 @@
 # see https://linux.die.net/man/1/xsetwacom for details
 # should be Option "Area" "0 0 62200 43200"
 echo "Setting tablet settings..."
-STYLUS="Wacom Intuos Pro L Pen stylus"
+#STYLUS="Wacom Intuos Pro L Pen stylus"
+STYLUS="Wacom Intuos Pro L Pen Pen (0x1680a989)"
 xsetwacom --set "$STYLUS" ResetArea
 # no suppression
 xsetwacom --set "$STYLUS" Suppress 0
@@ -11,13 +12,19 @@ xsetwacom --set "$STYLUS" RawSample 1
 xsetwacom --set "$STYLUS" PressureRecalibration off
 # (effectively) disable button functionality of stylus
 xsetwacom --set "$STYLUS" Threshold 2047
+
+# disconnect from mouse system
+xinput float "$STYLUS"
+#DISPLAY=:0.1 xinput map-to-output "$STYLUS" DisplayPort-2
+
 # TODO: MapToOutput, which will be an offset relative to the operator monitor
 # or can we just hide the cursor and draw the circle in the proper spot?
 
 # physical active area is 311 x 216 mm
 # resolution is 5080 lines/inch (200 lines/mm)
 
-# xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput 1920x1080+2560+0
+# xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput 6220x4320+0+0
+# DISPLAY=:0.1 xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput DisplayPort-2
 # xsetwacom --get "Wacom Intuos Pro L Pen stylus" all
 
 # part 2: turn off other pen functionality

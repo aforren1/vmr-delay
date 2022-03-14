@@ -27,13 +27,15 @@ n_evts = 0
 for event in device.read_loop():
     if event.type == 0: # sync event
         t1 = event.timestamp()
-        print(f'{n_evts} events, dt = {t1 - t}')
+        #print(f'{n_evts} events, dt = {t1 - t}')
+        print('')
         n_evts = 0
         t = t1
     else:
         #print((event))
-        if event.type == ecodes.EV_ABS and event.code in [ecodes.ABS_Y]:
+        if event.type == ecodes.EV_ABS and event.code in [ecodes.ABS_X, ecodes.ABS_Y]:
             #print(1/(event.timestamp() - t), event.code, event.value)
+            print(event.value)
             pass
             n_evts += 1
     

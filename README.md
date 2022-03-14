@@ -35,7 +35,7 @@ data/
     ...
 
 
-Use `cvt 1920 1080 240 -r` to get modeline settings to update the xorg.conf (check xrandr for exact refresh rate/dims)
+Use `cvt -r 1920 1080 240` to get modeline settings to update the xorg.conf (check xrandr for exact refresh rate/dims)
 don't flip in xrandr, let PTB do it?
 
 e.g.
@@ -49,3 +49,15 @@ PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
 We need to fiddle with `xsetwacom` to put the tablet in the right spot,
 
 https://wiki.archlinux.org/title/wacom_tablet#Adjusting_aspect_ratios
+
+## Notes
+
+https://psychtoolbox.discourse.group/t/120-240-hz-lcd-display-for-neurophysiology/3525/6 for some other experiences with consumer high-refresh-rate monitors
+
+https://psychtoolbox.discourse.group/t/wacom-tablet-valuators/3393/5
+
+https://softsolder.com/2020/01/14/huion-h610pro-v2-tablet-vs-xsetwacom/
+
+https://bugs.launchpad.net/ubuntu/+source/mutter/+bug/1900908
+
+https://digimend.github.io/support/howto/drivers/evdev/
