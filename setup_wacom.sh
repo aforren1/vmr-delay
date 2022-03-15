@@ -1,8 +1,8 @@
 # see https://linux.die.net/man/1/xsetwacom for details
 # should be Option "Area" "0 0 62200 43200"
 echo "Setting tablet settings..."
-#STYLUS="Wacom Intuos Pro L Pen stylus"
-STYLUS="Wacom Intuos Pro L Pen Pen (0x1680a989)"
+STYLUS="Wacom Intuos Pro L Pen stylus"
+#STYLUS="Wacom Intuos Pro L Pen Pen (0x1680a989)" # only if we used evdev driver, which we don't now
 xsetwacom --set "$STYLUS" ResetArea
 # no suppression
 xsetwacom --set "$STYLUS" Suppress 0
@@ -14,16 +14,19 @@ xsetwacom --set "$STYLUS" PressureRecalibration off
 xsetwacom --set "$STYLUS" Threshold 2047
 
 # disconnect from mouse system
+# look for floating devices (5) in PsychHID('Devices')
 xinput float "$STYLUS"
-#DISPLAY=:0.1 xinput map-to-output "$STYLUS" DisplayPort-2
-
-# TODO: MapToOutput, which will be an offset relative to the operator monitor
-# or can we just hide the cursor and draw the circle in the proper spot?
+#DISPLAY=:0.1 xinput map-to-output "$STYLUS" DisplayPort-2 # a failed attempt, multi-x-windows are tough
 
 # physical active area is 311 x 216 mm
 # resolution is 5080 lines/inch (200 lines/mm)
-
-# xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput 6220x4320+0+0
+# mapping explanation (I don't really get it either)
+# 549 is 1098 (the number of px the tablet *should* cover)/2 (b/c it counts the operator display too??)
+# 711 is the number of px the tablet should cover height-wise
+# 1166 is 960 (i.e. 1920/2, because horizontal counts for double) + 411/2 (where 411 should be the proper remainder...)
+# 155 is vertical offset, which is consistent with experience
+# if the operator display ever changes, you would need to work this out again
+xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput 549x771+1166+155
 # DISPLAY=:0.1 xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput DisplayPort-2
 # xsetwacom --get "Wacom Intuos Pro L Pen stylus" all
 
@@ -31,7 +34,6 @@ xinput float "$STYLUS"
 # I bet this doesn't really have an impact on performance,
 # because it's probably only affecting what X sees (i.e. the intrinsic state of the
 # tablet is unchanged, and /dev/input still gets it all)
-
 PAD="Wacom Intuos Pro L Pad pad"
 TOUCH="Wacom Intuos Pro L Finger touch"
 ERASER="Wacom Intuos Pro L Pen eraser"

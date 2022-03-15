@@ -27,6 +27,7 @@ function _vmr_exp(is_debug, settings)
 
     w.fps = Screen('FrameRate', w.w);
     w.ifi = Screen('GetFlipInterval', w.w);
+    Priority(MaxPriority(w.w));
     % TODO: map mm to pixels
     % X11 apparently gets it really wrong with extended screen, but
     % even gets height wrong??
@@ -49,7 +50,7 @@ function _vmr_exp(is_debug, settings)
     
     if found_tablet
         % hmm, 
-        devs = PsychHID('Devices', 5); % get all slave pointers
+        devs = PsychHID('Devices', 5); % 3 = slave, 5 = floating
         for dev = devs
             % not sure if interfaceID is stable, so parse the product name...
             % and vendor/product not filled??
@@ -76,6 +77,7 @@ function _vmr_exp(is_debug, settings)
 
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
     t = 0
+    evt = struct('X', 0, 'Y', 0);
     while state
         % break if esc pressed
         [~, ~, keys] = KbCheck(-1); % query all keyboards
@@ -86,7 +88,7 @@ function _vmr_exp(is_debug, settings)
         % process all pending input events
         while KbEventAvail(dev.index)
             [evt, n_evts] = PsychHID('KbQueueGetEvent', dev.index, 0);
-            disp(evt.Valuators); % we should use x = valuators(1) and y = valuators(2), which
+            disp([(evt.Time - t) evt.Valuators]); % we should use x = valuators(1) and y = valuators(2), which
                        % might be independent of screen mapping?
             %disp(evt.Time - t);
             t = evt.Time;
@@ -94,18 +96,20 @@ function _vmr_exp(is_debug, settings)
 
         % for the state machine, implement fallthrough by consecutive `if ...`
         if state == states.RETURN_TO_CENTER
-            if disp_time > (ref_time + 10)
+            if disp_time > (ref_time + 20)
                 state = states.END;
             end
         end
         % draw things based on state
-
+        Screen('FillOval', w.w, [255 255 255], CenterRectOnPoint([0 0 25 25], evt.X, evt.Y));
         Screen('DrawingFinished', w.w);
         % swap buffers
-        [~, disp_time] = Screen('Flip', w.w);
+        % use vbltime to schedule subsequent flips, and disp_time for actual
+        % stimulus onset time
+        [vbltime, disp_time] = Screen('Flip', w.w, vbltime + 0.5 * w.ifi);
     end
 
     KbQueueStop(dev.index);
     KbQueueRelease(dev.index);
-    sca; % clean up
+    _cleanup(); % clean up
 end
