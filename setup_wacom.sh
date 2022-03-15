@@ -16,7 +16,10 @@ xsetwacom --set "$STYLUS" Threshold 2047
 # disconnect from mouse system
 # look for floating devices (5) in PsychHID('Devices')
 xinput float "$STYLUS"
-#DISPLAY=:0.1 xinput map-to-output "$STYLUS" DisplayPort-2 # a failed attempt, multi-x-windows are tough
+
+# failed mapping attempts, multi-x-windows are hard
+#DISPLAY=:0.1 xinput map-to-output "$STYLUS" DisplayPort-2
+# DISPLAY=:0.1 xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput DisplayPort-2
 
 # physical active area is 311 x 216 mm
 # resolution is 5080 lines/inch (200 lines/mm)
@@ -27,7 +30,6 @@ xinput float "$STYLUS"
 # 155 is vertical offset, which is consistent with experience
 # if the operator display ever changes, you would need to work this out again
 xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput 549x771+1166+155
-# DISPLAY=:0.1 xsetwacom --set "Wacom Intuos Pro L Pen stylus" MapToOutput DisplayPort-2
 # xsetwacom --get "Wacom Intuos Pro L Pen stylus" all
 
 # part 2: turn off other pen functionality
