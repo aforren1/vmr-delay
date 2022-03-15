@@ -1,8 +1,8 @@
 # see https://linux.die.net/man/1/xsetwacom for details
-# should be Option "Area" "0 0 62200 43200"
 echo "Setting tablet settings..."
 STYLUS="Wacom Intuos Pro L Pen stylus"
 #STYLUS="Wacom Intuos Pro L Pen Pen (0x1680a989)" # only if we used evdev driver, which we don't now
+# should be Option "Area" "0 0 62200 43200"
 xsetwacom --set "$STYLUS" ResetArea
 # no suppression
 xsetwacom --set "$STYLUS" Suppress 0
@@ -43,13 +43,16 @@ ERASER="Wacom Intuos Pro L Pen eraser"
 xsetwacom --set "$PAD" Suppress 100
 xsetwacom --set "$PAD" RawSample 20
 xsetwacom --set "$PAD" Threshold 2047
+xinput float "$PAD"
 
 xsetwacom --set "$TOUCH" Touch off
 xsetwacom --set "$TOUCH" Gesture off
 xsetwacom --set "$TOUCH" Suppress 100
 xsetwacom --set "$TOUCH" RawSample 20
+xinput float "$TOUCH"
 
 xsetwacom --set "$ERASER" Suppress 100
 xsetwacom --set "$ERASER" RawSample 20
 xsetwacom --set "$ERASER" CursorProximity 1
+xinput float "$ERASER"
 echo "Done setting tablet settings..."

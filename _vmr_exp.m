@@ -37,42 +37,20 @@ function _vmr_exp(is_debug, settings)
 
     state = states.RETURN_TO_CENTER;
 
-    % TODO: shuffle this with settings rather than repeating
-    devs = PsychHID('Devices');
-    found_tablet = false;
-    for dev = devs
-        if dev.vendorID == 0x056a && dev.productID == 0x0358
-            found_tablet = true;
-            break
-        end
-    end
+    dev = _find_device(); % get the pen (or mouse, if testing)
+    % hide the cursor
+    % more for the sake of the operator mouse rather than tablet, which is probably
+    % floating at this point
+    HideCursor(w.w);
 
-    
-    if found_tablet
-        % hmm, 
-        devs = PsychHID('Devices', 5); % 3 = slave, 5 = floating
-        for dev = devs
-            % not sure if interfaceID is stable, so parse the product name...
-            % and vendor/product not filled??
-            if index(dev.product, 'Wacom') && index(dev.product, 'Pen')
-                break % we have our man
-            end
-        end
-
-    else % get the master mouse pointer or something
-        dev = PsychHID('Devices', 1);
-    end
-
-    dev = dev(1); % make sure we're down to one device (should always be the case)
-    disp(dev);
-    %HideCursor(w.w); % hide the cursor, because I don't want to fuss with proper mapping on the OS side
-    %Screen('ConstrainCursor', w.w, 1);
-    KbQueueCreate(dev.index, [], 2);%, [], [], 0);
+    KbQueueCreate(dev.index, [], 2);
     KbQueueStart(dev.index);
 
     % flip once more to get a reference time
     % we're assuming linux computers with OpenML support
-    [vbltime, ref_time] = Screen('Flip', w.w);
+    % vbl_time helps with scheduling flips, and ref_time helps with relating
+    % to input events (b/c it *should* be when the stimulus changes on the screen)
+    [vbl_time, ref_time] = Screen('Flip', w.w);
     disp_time = ref_time;
 
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
@@ -88,7 +66,7 @@ function _vmr_exp(is_debug, settings)
         % process all pending input events
         while KbEventAvail(dev.index)
             [evt, n_evts] = PsychHID('KbQueueGetEvent', dev.index, 0);
-            disp([(evt.Time - t) evt.Valuators]); % we should use x = valuators(1) and y = valuators(2), which
+            disp([(evt.Time - t) evt.X evt.Y]); % we should use x = valuators(1) and y = valuators(2), which
                        % might be independent of screen mapping?
             %disp(evt.Time - t);
             t = evt.Time;
@@ -104,9 +82,9 @@ function _vmr_exp(is_debug, settings)
         Screen('FillOval', w.w, [255 255 255], CenterRectOnPoint([0 0 25 25], evt.X, evt.Y));
         Screen('DrawingFinished', w.w);
         % swap buffers
-        % use vbltime to schedule subsequent flips, and disp_time for actual
+        % use vbl_time to schedule subsequent flips, and disp_time for actual
         % stimulus onset time
-        [vbltime, disp_time] = Screen('Flip', w.w, vbltime + 0.5 * w.ifi);
+        [vbl_time, disp_time] = Screen('Flip', w.w, vbl_time + 0.5 * w.ifi);
     end
 
     KbQueueStop(dev.index);
