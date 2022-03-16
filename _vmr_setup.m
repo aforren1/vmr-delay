@@ -6,7 +6,7 @@ function _vmr_setup(debug)
         pkg load io % only if we stick with json everywhere
     end
 
-    if (IsOctave() && IsLinux())
+    if ~(IsOctave() && IsLinux())
         warning([sprintf('This experiment was written to specifically target linux + Octave.\n'), ...
                  'Things will probably fail if you have not adapted to other systems.']);
     end

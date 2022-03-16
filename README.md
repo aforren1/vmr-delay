@@ -65,3 +65,4 @@ https://digimend.github.io/support/howto/drivers/evdev/
 Asus says doing ELMB @ 120Hz should show 120 images/sec interleaved with black frames, so we should
 consider turning that on?
 https://blurbusters.com/faq/advanced-strobe-crosstalk-faq
+https://forums.blurbusters.com/viewtopic.php?f=23&t=8235&start=10
