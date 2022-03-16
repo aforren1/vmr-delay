@@ -5,8 +5,13 @@ function _vmr_setup(debug)
     if IsOctave()
         pkg load io % only if we stick with json everywhere
     end
+
+    if (IsOctave() && IsLinux())
+        warning([sprintf('This experiment was written to specifically target linux + Octave.\n'), ...
+                 'Things will probably fail if you have not adapted to other systems.']);
+    end
     try
-        vmr_inner(debug == 'd');
+        vmr_inner(debug);
     catch err
         % clean up PTB here
         % Do we need anything else? Audio/input/..
@@ -17,13 +22,14 @@ end
 
 function vmr_inner(is_debug)
     ref_path = fileparts(mfilename('fullpath'));
-    cache_path = fullfile(ref_path, 'cache.json');    
+    cache_path = fullfile(ref_path, 'cache.json');
+    test_tgt = fullfile(ref_path, 'tgt', 'test.tgt.json');
     % load cache file, otherwise fill in default
     try
         cache = from_json(cache_path);
     catch err
         % no cache, fill in default
-        cache = struct('id', 'test', 'tgt', 'test.tgt');
+        cache = struct('id', 'test', 'tgt', test_tgt);
     end
 
     % buglet: device info not filled when deviceClass unspecified?
@@ -57,6 +63,18 @@ function vmr_inner(is_debug)
         end
     end
 
-    to_json(cache_path, cache);
+    % pick the file to dictate the experiment flow
+    if ~is_debug
+        [fname, fpath, ~] = uigetfile('*.tgt.json', 'Pick a tgt.json', cache.tgt);
+        if ~fname
+            error('No tgt selected.');
+        end
+        tgt_path = fullfile(fpath, fname);
+    else
+        tgt_path = test_tgt;
+    end
+
+    cache.tgt = tgt_path;
+    to_json(cache_path, cache); % save cache for next time
     _vmr_exp(is_debug, cache);
 end

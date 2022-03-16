@@ -2,7 +2,7 @@
 # (set as executable via "chmod +x vmr.m")
 args = argv();
 if length(args) > 0
-    _vmr_setup('d');
+    _vmr_setup(true);
 else
-    _vmr_setup('x');
+    _vmr_setup(false);
 end

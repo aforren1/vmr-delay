@@ -1,9 +1,9 @@
 
-function save_cache(filename, val)
+function to_json(filename, val)
     if IsOctave()
         txt = toJSON(val);
     else
-        error('save_cache not implemented for MATLAB.');
+        error('to_json not implemented for MATLAB.');
         % probably txt = jsonencode(cache); ?
     end
 

@@ -4,6 +4,6 @@ function data = from_json(filename)
         data = fromJSON(cache);
     else
         % https://www.mathworks.com/matlabcentral/answers/474980-extract-info-from-json-file-by-matlab
-        error('load_cache not implemented for MATLAB.');
+        error('from_json not implemented for MATLAB.');
     end
 end

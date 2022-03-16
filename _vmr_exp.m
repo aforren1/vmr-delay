@@ -1,13 +1,23 @@
 % the "real" part of the experiment
 function _vmr_exp(is_debug, settings)
 
+    % constants
+    GREEN = [0 255 0];
+    RED = [255 0 0];
+    WHITE = [255 255 255];
+    BLACK = [0 0 0];
+    GRAY30 = [77 77 77];
+    GRAY50 = [127 127 127];
+    GRAY70 = [179 179 179];
+    % ORIGIN (offset from center of screen)
+
     % turn off splash
     KbName('UnifyKeyNames');
     Screen('Preference', 'VisualDebugLevel', 3);
     screens = Screen('Screens');
     max_scr = max(screens);
 
-    w = struct();
+    w = struct(); % container for window-related things
     if is_debug % tiny window
         Screen('Preference', 'SkipSyncTests', 1); 
         [w.w, w.rect] = Screen('OpenWindow', max_scr, 0, [0, 0, 800, 800]);

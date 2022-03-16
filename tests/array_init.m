@@ -36,3 +36,21 @@ disp(sizeof(z));
 % prove to myself a copy is made
 z(5).x = 3;
 disp(x(5).x == z(5).x);
+
+% huh, I thought this would be a cache thing but
+% struct of arrays even wins here
+disp('access array of structs');
+tic;
+for i = 1:maxval
+    y(i).x = i;
+    y(i).y = i+1;
+end
+toc;
+
+disp('access struct of arrays');
+tic;
+for i = 1:maxval
+    w.x(i) = i;
+    w.y(i) = i+1;
+end
+toc;
