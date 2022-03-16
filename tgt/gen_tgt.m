@@ -20,11 +20,19 @@ block_level.cursor_size = 4; % mm
 block_level.center_size = 12;
 block_level.target_size = 16;
 block_level.target_distance = 80;
-block_level.target_angles = linspace(0, 360 - 45, 8);
+block_level.rot_or_clamp = 'rot';
+
+target_angles = linspace(0, 360 - 45, 8);
+manip_angles = [zeros(5, 1); (30 * ones(3, 1)); zeros(2, 1)];
+delays = [0, 500];
 
 for i = 1:N_TRIALS
-    trial_level(i).target_index = randi([1, 8]);
+    ang = target_angles(randi([1, 8]));
+    % keep in mind, these are in mm
+    trial_level(i).target.x = block_level.target_distance * cosd(ang);
+    trial_level(i).target.y = block_level.target_distance * sind(ang);
     trial_level(i).delay = 500; % milliseconds; these are mapped into # of frames, so be aware of divisibility
+    trial_level(i).manip_angle = manip_angles(i);
 end
 
 exp_data = struct('block_level', block_level, 'trial_level', trial_level);

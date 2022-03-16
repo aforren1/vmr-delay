@@ -61,3 +61,7 @@ https://softsolder.com/2020/01/14/huion-h610pro-v2-tablet-vs-xsetwacom/
 https://bugs.launchpad.net/ubuntu/+source/mutter/+bug/1900908
 
 https://digimend.github.io/support/howto/drivers/evdev/
+
+Asus says doing ELMB @ 120Hz should show 120 images/sec interleaved with black frames, so we should
+consider turning that on?
+https://blurbusters.com/faq/advanced-strobe-crosstalk-faq
