@@ -16,8 +16,9 @@ PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
 
 x_mm2px = @(mm) (mm / 0.2832);
 y_mm2px = @(mm) (mm / 0.2802);
+mm2px = @(mm) (mm ./ [0.2832, 0.2802]);
 # draw a 10cm^2 square to measure
-rct = [0 0 x_mm2px(100) y_mm2px(100)];
+rct = [0 0 mm2px([100 100])];
 Screen('FillRect', w.w, [255 255 255], CenterRectOnPoint(rct, w.center(1), w.center(2)));
 
 Screen('Flip', w.w);

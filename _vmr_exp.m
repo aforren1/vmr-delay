@@ -54,21 +54,34 @@ function _vmr_exp(is_debug, settings)
     disp_time = ref_time;
 
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
-    t = 0
-    evt = struct('X', 0, 'Y', 0);
+    t = 0;
+    evt = struct('X', w.center(1), 'Y', w.center(2)); % dummy struct, until first input event is generated
     while state
         % break if esc pressed
+        beginning_state = state; % store initial state for data
         [~, ~, keys] = KbCheck(-1); % query all keyboards
         if keys(10) % hopefully right-- we unified key positions before?
             error('Escape was pressed.');
         end
 
+        % sleep part of the frame to reduce lag
+        % TODO: tweak this if we end up doing the 120hz + strobing
+        % we probably only need a 1-2ms to do state updates
+        % for 240hz, this cuts off up to 2.5ms or so?
+        WaitSecs('UntilTime', vbl_time + 0.6 * w.ifi);
+
         % process all pending input events
-        while KbEventAvail(dev.index)
-            [evt, n_evts] = PsychHID('KbQueueGetEvent', dev.index, 0);
-            disp([(evt.Time - t) evt.X evt.Y]); % we should use x = valuators(1) and y = valuators(2), which
-                       % might be independent of screen mapping?
-            %disp(evt.Time - t);
+        % check number of pending events once, which should be robust
+        % to higher-frequency devices
+        n_evts = KbEventAvail(dev.index);
+        for i = 1:n_evts
+            % events are in the same coordinates as psychtoolbox (px)
+            % eventually, we would figure out mapping so that we get to use
+            % the full range of valuators, but I haven't been able to get
+            % it right yet. So for now, we're stuck with slightly truncated resolution
+            % (but still probably plenty)
+            [evt, ~] = PsychHID('KbQueueGetEvent', dev.index, 0);
+            disp([(evt.Time - t) evt.X evt.Y]);
             t = evt.Time;
         end
 
@@ -84,7 +97,9 @@ function _vmr_exp(is_debug, settings)
         % swap buffers
         % use vbl_time to schedule subsequent flips, and disp_time for actual
         % stimulus onset time
-        [vbl_time, disp_time] = Screen('Flip', w.w, vbl_time + 0.5 * w.ifi);
+        [vbl_time, disp_time, ~, missed, ~] = Screen('Flip', w.w, vbl_time + 0.95 * w.ifi);
+        % done the frame, we'll write data now?
+        missed_deadline = missed >= 0;
     end
 
     KbQueueStop(dev.index);

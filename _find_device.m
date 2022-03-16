@@ -17,7 +17,7 @@ function dev = _find_device()
         for dev = devs
             % not sure if interfaceID is stable, so parse the product name...
             % and vendor/product not filled??
-            if index(dev.product, 'Wacom') && index(dev.product, 'Pen')
+            if index(dev.product, 'Wacom') && index(dev.product, 'stylus')
                 found_pen = true;
                 break % we have our man
             end
@@ -28,7 +28,7 @@ function dev = _find_device()
             for dev = devs
                 % not sure if interfaceID is stable, so parse the product name...
                 % and vendor/product not filled??
-                if index(dev.product, 'Wacom') && index(dev.product, 'Pen')
+                if index(dev.product, 'Wacom') && index(dev.product, 'stylus')
                     found_pen = true;
                     break % we have our man
                 end
