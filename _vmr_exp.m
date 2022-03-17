@@ -11,6 +11,11 @@ function _vmr_exp(is_debug, settings)
     GRAY70 = [179 179 179];
     % ORIGIN (offset from center of screen)
 
+    % read the .tgt.json
+    tgt = from_json(settings.tgt);
+    % allocate data before running anything
+    data = _alloc_data(length(tgt.trial_level));
+
     % turn off splash
     KbName('UnifyKeyNames');
     Screen('Preference', 'VisualDebugLevel', 3);
@@ -65,6 +70,9 @@ function _vmr_exp(is_debug, settings)
 
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
     t = 0;
+    trial_count = 1;
+    frame_count = 1;
+    within_trial_count = 1;
     evt = struct('X', w.center(1), 'Y', w.center(2)); % dummy struct, until first input event is generated
     while state
         % break if esc pressed
@@ -110,9 +118,47 @@ function _vmr_exp(is_debug, settings)
         [vbl_time, disp_time, ~, missed, ~] = Screen('Flip', w.w, vbl_time + 0.95 * w.ifi);
         % done the frame, we'll write data now?
         missed_deadline = missed >= 0;
+        data.trials.frames(trial_count).frame_count(within_trial_count) = frame_count;
+        data.trials.frames(trial_count).vbl_time(within_trial_count) = vbl_time;
+        data.trials.frames(trial_count).disp_time(within_trial_count) = disp_time;
+        data.trials.frames(trial_count).missed_frame_deadline(within_trial_count) = missed_deadline;
+        data.trials.frames(trial_count).start_state(within_trial_count) = beginning_state;
+        data.trials.frames(trial_count).end_state(within_trial_count) = state;
+
+        frame_count = frame_count + 1; % grows forever
+        within_trial_count = within_trial_count + 1; % remember to reset when moving to new trial
     end
 
     KbQueueStop(dev.index);
     KbQueueRelease(dev.index);
     _cleanup(); % clean up
+
+    % write data
+    data.block.id = settings.id;
+    data.block.is_debug = is_debug;
+    data.block.tgt_path = settings.tgt;
+    [status, data.block.git_hash] = system("git log --pretty=format:'%H' -1 2>/dev/null");
+    if status
+        warning('git hash failed, is git installed?');
+    end
+    [status, data.block.git_branch] = system("git rev-parse --abbrev-ref HEAD 2>/dev/null");
+    if status
+        warning('git branch failed, is git installed?');
+    end
+    [status, data.block.git_tag] = system("git describe --tags 2>/dev/null");
+    if status
+        warning('git tag failed, has a release been tagged?');
+    end
+    data.block.sysinfo = uname();
+    data.block.oct_ver = version();
+    [~, data.block.ptb_ver] = PsychtoolboxVersion();
+    data.block.exp_info = ''; % TODO: fill
+    data.block.cursor_size = 0;
+    data.block.center_size = 0;
+    data.block.target_size = 0;
+    data.block.target_distance = 0;
+    data.block.rot_or_clamp = '';
+
+    % write data
+    to_json('foo.json', data, 1);
 end

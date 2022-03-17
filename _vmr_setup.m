@@ -2,10 +2,6 @@
 % Note this assumes only octave. Some things don't exist in MATLAB (e.g. yes_or_no), and
 % I don't want to take the time to fix/standardize at this point
 function _vmr_setup(debug)
-    if IsOctave()
-        pkg load io % only if we stick with json everywhere
-    end
-
     if ~(IsOctave() && IsLinux())
         warning([sprintf('This experiment was written to specifically target linux + Octave.\n'), ...
                  'Things will probably fail if you have not adapted to other systems.']);
@@ -75,6 +71,6 @@ function vmr_inner(is_debug)
     end
 
     cache.tgt = tgt_path;
-    to_json(cache_path, cache); % save cache for next time
+    to_json(cache_path, cache, 0); % save cache for next time
     _vmr_exp(is_debug, cache);
 end

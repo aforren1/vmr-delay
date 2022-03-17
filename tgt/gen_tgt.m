@@ -32,7 +32,7 @@ for i = 1:N_TRIALS
     trial_level(i).target.x = block_level.target_distance * cosd(ang);
     trial_level(i).target.y = block_level.target_distance * sind(ang);
     trial_level(i).delay = 500; % milliseconds; these are mapped into # of frames, so be aware of divisibility
-    trial_level(i).manip_angle = manip_angles(i);
+    trial_level(i).manipulation_angle = manipulation_angles(i);
 end
 
 exp_data = struct('block_level', block_level, 'trial_level', trial_level);

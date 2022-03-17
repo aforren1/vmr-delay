@@ -66,3 +66,7 @@ Asus says doing ELMB @ 120Hz should show 120 images/sec interleaved with black f
 consider turning that on?
 https://blurbusters.com/faq/advanced-strobe-crosstalk-faq
 https://forums.blurbusters.com/viewtopic.php?f=23&t=8235&start=10
+
+json_encode/decode are from https://gitlab.com/leastrobino/matlab-json
+The ones from the io pkg are very slow (like an order of magnitude worse than saving a mat file)
+These are 2x faster than saving a mat file, and can be significantly smaller too (after gzipping)
