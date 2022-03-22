@@ -131,6 +131,7 @@ function _vmr_exp(is_debug, settings)
 
     KbQueueStop(dev.index);
     KbQueueRelease(dev.index);
+    info = Screen('GetWindowInfo', w.w); % grab renderer info before cleaning up
     _cleanup(); % clean up
 
     % write data
@@ -152,6 +153,11 @@ function _vmr_exp(is_debug, settings)
     data.block.sysinfo = uname();
     data.block.oct_ver = version();
     [~, data.block.ptb_ver] = PsychtoolboxVersion();
+    data.block.gpu_vendor = info.GLVendor;
+    data.block.gpu_renderer = info.GLRenderer;
+    data.block.gl_version = info.GLVersion;
+    data.block.missed_deadlines = info.MissedDeadlines;
+    data.block.n_flips = info.FlipCount;
     data.block.exp_info = ''; % TODO: fill
     data.block.cursor_size = 0;
     data.block.center_size = 0;
