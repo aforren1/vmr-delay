@@ -1,3 +1,7 @@
+# build special encode/decode for JSON
+# they're *way* faster than the ones available
+# in the io package, and I don't think we can/should target
+# octave 7 yet, which has builtin jsonencode/jsondecode
 all: build
 
 build:
