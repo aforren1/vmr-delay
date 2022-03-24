@@ -3,4 +3,5 @@ function _cleanup()
     sca;
     PsychPortAudio('Close');
     PsychHID('KbQueueRelease'); % TODO: do we need to specify the device index? Probably not
+    diary off;
 end

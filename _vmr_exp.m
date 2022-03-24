@@ -1,6 +1,7 @@
 % the "real" part of the experiment
 function _vmr_exp(is_debug, settings)
-
+    start_unix = floor(time());
+    start_dt = datestr(clock(), 31); %Y-M-D H:M:S
     % constants
     GREEN = [0 255 0];
     RED = [255 0 0];
@@ -9,12 +10,20 @@ function _vmr_exp(is_debug, settings)
     GRAY30 = [77 77 77];
     GRAY50 = [127 127 127];
     GRAY70 = [179 179 179];
+    X_MM2PX = 0.2832; % pixel pitch, specific to "real" monitor
+    Y_MM2PX = 0.2802;
+    X_MM2PX_INV = 1 / X_MM2PX;
+    Y_MM2PX_INV = 1 / Y_MM2PX;
+
+    x_mm2px = @(mm) (mm * X_MM2PX_INV);
+    y_mm2px = @(mm) (mm * Y_MM2PX_INV);
+    mm2px = @(mm) (mm .* [X_MM2PX_INV Y_MM2PX_INV]);
     % ORIGIN (offset from center of screen)
 
     % read the .tgt.json
-    tgt = from_json(settings.tgt);
+    tgt = from_json(settings.tgt_path);
     % allocate data before running anything
-    data = _alloc_data(length(tgt.trial_level));
+    data = _alloc_data(length(tgt.trial));
 
     % turn off splash
     KbName('UnifyKeyNames');
@@ -23,8 +32,9 @@ function _vmr_exp(is_debug, settings)
     max_scr = max(screens);
 
     w = struct(); % container for window-related things
-    if is_debug % tiny window
-        Screen('Preference', 'SkipSyncTests', 1); 
+    if is_debug % tiny window, skip all the warnings
+        Screen('Preference', 'SkipSyncTests', 2); 
+        Screen('Preference', 'VisualDebugLevel', 0);
         [w.w, w.rect] = Screen('OpenWindow', max_scr, 0, [0, 0, 800, 800]);
     else
         % real deal, make sure sync tests work
@@ -43,11 +53,11 @@ function _vmr_exp(is_debug, settings)
     w.fps = Screen('FrameRate', w.w);
     w.ifi = Screen('GetFlipInterval', w.w);
     Priority(MaxPriority(w.w));
-    % TODO: map mm to pixels
     % X11 apparently gets it really wrong with extended screen, but
     % even gets height wrong??
     % actually gets it wrong with single screen too, so...
     % randr seems to nail it though
+    % and for this round, we've just gotten the size from the manual (see mm2px* above)
     % [w.disp.width, w.disp.height] = Screen('DisplaySize', max_scr);
 
     state = states.RETURN_TO_CENTER;
@@ -69,14 +79,13 @@ function _vmr_exp(is_debug, settings)
     disp_time = ref_time;
 
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
-    t = 0;
+    %t = 0;
     trial_count = 1;
     frame_count = 1;
     within_trial_count = 1;
     evt = struct('X', w.center(1), 'Y', w.center(2)); % dummy struct, until first input event is generated
     while state
         % break if esc pressed
-        beginning_state = state; % store initial state for data
         [~, ~, keys] = KbCheck(-1); % query all keyboards
         if keys(10) % hopefully right-- we unified key positions before?
             error('Escape was pressed.');
@@ -99,19 +108,31 @@ function _vmr_exp(is_debug, settings)
             % it right yet. So for now, we're stuck with slightly truncated resolution
             % (but still probably plenty)
             [evt, ~] = PsychHID('KbQueueGetEvent', dev.index, 0);
-            disp([(evt.Time - t) evt.X evt.Y]);
-            t = evt.Time;
+            %disp([(evt.Time - t) evt.X evt.Y]);
+            %t = evt.Time;
+            % TODO: does MATLAB do non-copy slices?? This sucks
+            data.trials.frames(trial_count).input_events(within_trial_count).time(i) = evt.Time;
+            data.trials.frames(trial_count).input_events(within_trial_count).x(i) = evt.X;
+            data.trials.frames(trial_count).input_events(within_trial_count).y(i) = evt.Y;
         end
-
+        % take subset to reduce storage size (& because anything else is junk)
+        % again, I *really* wish I could just take an equivalent to a numpy view...
+        data.trials.frames(trial_count).input_events(within_trial_count).time = data.trials.frames(trial_count).input_events(within_trial_count).time(1:n_evts);
+        data.trials.frames(trial_count).input_events(within_trial_count).x = data.trials.frames(trial_count).input_events(within_trial_count).x(1:n_evts);
+        data.trials.frames(trial_count).input_events(within_trial_count).y = data.trials.frames(trial_count).input_events(within_trial_count).y(1:n_evts);
         % for the state machine, implement fallthrough by consecutive `if ...`
+        beginning_state = state; % store initial state for data
         if state == states.RETURN_TO_CENTER
-            if disp_time > (ref_time + 20)
+            if disp_time > (ref_time + 5)
                 state = states.END;
             end
         end
         % draw things based on state
-        Screen('FillOval', w.w, [255 255 255], CenterRectOnPoint([0 0 25 25], evt.X, evt.Y));
+        % we'll do it inline with state changes for now-- we should *probably* collate if we were
+        % drawing more things, but I expect it'll only be a few circles and some text
+        Screen('FillOval', w.w, [255 255 255], CenterRectOnPoint([0 0 mm2px(tgt.block.cursor_size)], evt.X, evt.Y));
         Screen('DrawingFinished', w.w);
+        % do we have any useful work to do here? Probably not, if we slept half the frame away
         % swap buffers
         % use vbl_time to schedule subsequent flips, and disp_time for actual
         % stimulus onset time
@@ -125,24 +146,25 @@ function _vmr_exp(is_debug, settings)
         data.trials.frames(trial_count).start_state(within_trial_count) = beginning_state;
         data.trials.frames(trial_count).end_state(within_trial_count) = state;
 
-        frame_count = frame_count + 1; % grows forever
+        frame_count = frame_count + 1; % grows forever/applies across entire experiment
         within_trial_count = within_trial_count + 1; % remember to reset when moving to new trial
     end
 
     KbQueueStop(dev.index);
     KbQueueRelease(dev.index);
-    info = Screen('GetWindowInfo', w.w); % grab renderer info before cleaning up
-    _cleanup(); % clean up
+    Screen('TextSize', w.w, floor(0.05 * w.rect(4)));
+    DrawFormattedText(w.w, 'Finished, saving data...', 'center', 'center', 255);
+    Screen('Flip', w.w);
 
     % write data
     data.block.id = settings.id;
     data.block.is_debug = is_debug;
-    data.block.tgt_path = settings.tgt;
+    data.block.tgt_path = settings.tgt_path;
     [status, data.block.git_hash] = system("git log --pretty=format:'%H' -1 2>/dev/null");
     if status
         warning('git hash failed, is git installed?');
     end
-    [status, data.block.git_branch] = system("git rev-parse --abbrev-ref HEAD 2>/dev/null");
+    [status, data.block.git_branch] = system("git rev-parse --abbrev-ref HEAD | tr -d '\n' 2>/dev/null");
     if status
         warning('git branch failed, is git installed?');
     end
@@ -153,18 +175,23 @@ function _vmr_exp(is_debug, settings)
     data.block.sysinfo = uname();
     data.block.oct_ver = version();
     [~, data.block.ptb_ver] = PsychtoolboxVersion();
+    info = Screen('GetWindowInfo', w.w); % grab renderer info before cleaning up
     data.block.gpu_vendor = info.GLVendor;
     data.block.gpu_renderer = info.GLRenderer;
     data.block.gl_version = info.GLVersion;
     data.block.missed_deadlines = info.MissedDeadlines;
     data.block.n_flips = info.FlipCount;
-    data.block.exp_info = ''; % TODO: fill
-    data.block.cursor_size = 0;
-    data.block.center_size = 0;
-    data.block.target_size = 0;
-    data.block.target_distance = 0;
-    data.block.rot_or_clamp = '';
+    data.block.pixel_pitch = [X_MM2PX Y_MM2PX];
+    data.block.start_unix = start_unix; % whole seconds since unix epoch
+    data.block.start_dt = start_dt;
+    
+    % copy common things over
+    for fn = fieldnames(tgt.block)'
+        data.block.(fn{1}) = tgt.block.(fn{1});
+    end
 
     % write data
-    to_json('foo.json', data, 1);
+    mkdir(settings.data_path);
+    to_json(fullfile(settings.data_path, strcat(settings.id, '_', num2str(data.block.start_unix), '.json')), data, 1);
+    _cleanup(); % clean up
 end

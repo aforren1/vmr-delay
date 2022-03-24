@@ -2,6 +2,9 @@
 % Note this assumes only octave. Some things don't exist in MATLAB (e.g. yes_or_no), and
 % I don't want to take the time to fix/standardize at this point
 function _vmr_setup(debug)
+    delete('latest.log');
+    diary 'latest.log'; % write warnings/errs to logfile
+    diary on;
     if ~(IsOctave() && IsLinux())
         warning([sprintf('This experiment was written to specifically target linux + Octave.\n'), ...
                  'Things will probably fail if you have not adapted to other systems.']);
@@ -17,15 +20,27 @@ function _vmr_setup(debug)
 end
 
 function vmr_inner(is_debug)
+    if IsOctave()
+        ignore_function_time_stamp("all");
+    end
     ref_path = fileparts(mfilename('fullpath'));
     cache_path = fullfile(ref_path, 'cache.json');
     test_tgt = fullfile(ref_path, 'tgt', 'test.tgt.json');
+    default_settings = struct('id', 'test', 'tgt_path', test_tgt, 'data_path', fullfile(ref_path, 'data'));
     % load cache file, otherwise fill in default
     try
         cache = from_json(cache_path);
+        f1 = fieldnames(cache);
+        f2 = fieldnames(default_settings);
+        lf1 = length(f1);
+        lf2 = length(f2);
+        lfb = length(intersect(f1, f2));
+        if lf1 != lf2 || lfb != lf2 || lfb != lf1
+            error('Fieldnames have changed, reverting to default.');
+        end
     catch err
         % no cache, fill in default
-        cache = struct('id', 'test', 'tgt', test_tgt);
+        cache = default_settings;
     end
 
     % buglet: device info not filled when deviceClass unspecified?
@@ -61,7 +76,7 @@ function vmr_inner(is_debug)
 
     % pick the file to dictate the experiment flow
     if ~is_debug
-        [fname, fpath, ~] = uigetfile('*.tgt.json', 'Pick a tgt.json', cache.tgt);
+        [fname, fpath, ~] = uigetfile('*.tgt.json', 'Pick a tgt.json', cache.tgt_path);
         if ~fname
             error('No tgt selected.');
         end
@@ -70,7 +85,7 @@ function vmr_inner(is_debug)
         tgt_path = test_tgt;
     end
 
-    cache.tgt = tgt_path;
+    cache.tgt_path = tgt_path;
     to_json(cache_path, cache, 0); % save cache for next time
     _vmr_exp(is_debug, cache);
 end
