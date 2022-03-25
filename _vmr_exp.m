@@ -154,11 +154,10 @@ function _vmr_exp(is_debug, settings)
             % prune our giant dataset, this is the last frame of the trial
             % TODO: should we let saving trial-level data be handled by the state machine,
             % or let it leak here?
-            data.trials.delay(trial_count) = tgt.trial(trial_count).delay;
-            data.trials.target(trial_count) = tgt.trial(trial_count).target;
-            data.trials.is_manipulated(trial_count) = tgt.trial(trial_count).is_manipulated;
-            data.trials.manipulation_angle(trial_count) = tgt.trial(trial_count).manipulation_angle;
-            data.trials.is_endpoint(trial_count) = tgt.trial(trial_count).is_endpoint;
+            % we don't need to keep in sync if we use dynamic names:
+            for fn = fieldnames(tgt.trial(trial_count))'
+                data.trials.(fn{1})(trial_count) = tgt.trial(trial_count).(fn{1});
+            end
             % alternatively, we just save these without context
             data.trials.frames(trial_count).frame_count = data.trials.frames(trial_count).frame_count(1:within_trial_frame_count);
             data.trials.frames(trial_count).vbl_time = data.trials.frames(trial_count).vbl_time(1:within_trial_frame_count);
@@ -222,6 +221,8 @@ function _vmr_exp(is_debug, settings)
         data.block.(fn{1}) = tgt.block.(fn{1});
     end
 
+    data.tgt = tgt; % save a copy of the tgt just because
+    % data.summary = sm.get_summary(); % get the summary array stored by the state machine. Should only be non-tgt stuff (computed reach angle, RT, ...)
     % write data
     mkdir(settings.data_path); % might already exist, but it doesn't error if so
     to_json(fullfile(settings.data_path, strcat(settings.id, '_', num2str(data.block.start_unix), '.json')), data, 1);
