@@ -66,11 +66,22 @@ disp(mb);
 
 % try json.gz (11.8 sec, 736 KB with mex files)
 tic;
-to_json('foo.json', block_data, 1);
+%to_json('foo.json', block_data, 1);
+boo = json_encode(block_data);
+fid = fopen('foo.json', 'w');
+fputs(fid, boo);
+fclose(fid);
 % opts = struct('FloatFormat', '%.6g', 'ArrayIndent', 0, 'NestArray', 1);
 % savejson('', block_data, 'foo.json', opts);
 toc;
 
+%try octave-rapidjson (generated significantly larger files, not sure what was going on?)
+tic;
+bar = save_json(block_data);
+fid = fopen('bar.json', 'w');
+fputs(fid, bar);
+fclose(fid);
+toc;
 % try mat (22.9 sec, 5.4MB)
 tic;
 save("-mat7-binary", "-z", "foo.mat", "-struct", "block_data");

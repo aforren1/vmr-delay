@@ -4,5 +4,6 @@ classdef states
         % do we want strings or numbers?
         END = 0
         RETURN_TO_CENTER = 1
+        REACH = 2
     end
 end

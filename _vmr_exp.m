@@ -53,14 +53,13 @@ function _vmr_exp(is_debug, settings)
     w.fps = Screen('FrameRate', w.w);
     w.ifi = Screen('GetFlipInterval', w.w);
     Priority(MaxPriority(w.w));
-    % X11 apparently gets it really wrong with extended screen, but
-    % even gets height wrong??
+    % X11 apparently gets it really wrong with extended screen, but even gets height wrong??
     % actually gets it wrong with single screen too, so...
     % randr seems to nail it though
     % and for this round, we've just gotten the size from the manual (see mm2px* above)
     % [w.disp.width, w.disp.height] = Screen('DisplaySize', max_scr);
 
-    state = states.RETURN_TO_CENTER;
+    sm = StateMachine(tgt, w);
 
     dev = _find_device(); % get the pen (or mouse, if testing)
     % hide the cursor
@@ -120,10 +119,15 @@ function _vmr_exp(is_debug, settings)
         data.trials.frames(trial_count).input_events(within_trial_count).time = data.trials.frames(trial_count).input_events(within_trial_count).time(1:n_evts);
         data.trials.frames(trial_count).input_events(within_trial_count).x = data.trials.frames(trial_count).input_events(within_trial_count).x(1:n_evts);
         data.trials.frames(trial_count).input_events(within_trial_count).y = data.trials.frames(trial_count).input_events(within_trial_count).y(1:n_evts);
+
+        % when we increment a trial, we can reset within_trial_count to 1
         % for the state machine, implement fallthrough by consecutive `if ...`
         beginning_state = state; % store initial state for data
         if state == states.RETURN_TO_CENTER
             if disp_time > (ref_time + 5)
+                if trial_count >= 2
+                    state = states.END;
+                end
                 state = states.END;
             end
         end
@@ -184,6 +188,9 @@ function _vmr_exp(is_debug, settings)
     data.block.pixel_pitch = [X_MM2PX Y_MM2PX];
     data.block.start_unix = start_unix; % whole seconds since unix epoch
     data.block.start_dt = start_dt;
+    % mapping from numbers to strings for state
+    % these should be in order, so indexing directly (after +1, depending on lang) with `start_state`/`end_state` should work (I hope)
+    data.block.state_names = fieldnames(states);
     
     % copy common things over
     for fn = fieldnames(tgt.block)'
