@@ -6,17 +6,18 @@
 % we went with struct-of-arrays instead of array-of-structs
 % for allocation/serialization speed, even though array-of-structs
 % is more intuitive for indexing, e.g.
-% data.trials(3).frames(2).input_events(5).time is more natural to me than
-% data.trials.frames(3).input_events(2).time(5)
+% data.trials(3).frames(2).input_events(5).t is more natural to me than
+% data.trials.frames(3).input_events(2).t(5)
 
 % but ¯\_(ツ)_/¯
 
 function data = _alloc_data(n_trials)
     MAX_INPUT_EVENTS_FRAME = 10;
     z =  zeros(MAX_INPUT_EVENTS_FRAME, 1);
-    input_evts = struct('time', z, ...
+    input_evts = struct('t', z, ...
                         'x', z, ...
-                        'y', z);
+                        'y', z, ...
+                        'state', z);
     
     % each frame
     MAX_FRAMES_PER_TRIAL = 240 * 30; % 30 seconds

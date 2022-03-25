@@ -32,10 +32,11 @@ function _vmr_exp(is_debug, settings)
     max_scr = max(screens);
 
     w = struct(); % container for window-related things
+    %TODO: do we want antialiasing?
     if is_debug % tiny window, skip all the warnings
         Screen('Preference', 'SkipSyncTests', 2); 
         Screen('Preference', 'VisualDebugLevel', 0);
-        [w.w, w.rect] = Screen('OpenWindow', max_scr, 0, [0, 0, 800, 800]);
+        [w.w, w.rect] = Screen('OpenWindow', max_scr, 50, [0, 0, 800, 800], [], [], [], []);
     else
         % real deal, make sure sync tests work
         % for the display (which is rotated 180 deg), we need
@@ -44,7 +45,7 @@ function _vmr_exp(is_debug, settings)
         PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
         [w.w, w.rect] = Screen('OpenWindow', max_scr, 0);
     end
-
+    %Screen('BlendFunction', w.w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     [w.center(1), w.center(2)] = RectCenter(w.rect);
     % assume color is 8 bit, so don't fuss with WhiteIndex/BlackIndex
 
@@ -59,13 +60,18 @@ function _vmr_exp(is_debug, settings)
     % and for this round, we've just gotten the size from the manual (see mm2px* above)
     % [w.disp.width, w.disp.height] = Screen('DisplaySize', max_scr);
 
-    sm = StateMachine(tgt, w);
+    sm = StateMachine(tgt, w, mm2px);
 
     dev = _find_device(); % get the pen (or mouse, if testing)
     % hide the cursor
     % more for the sake of the operator mouse rather than tablet, which is probably
     % floating at this point
-    HideCursor(w.w);
+    if ~is_debug
+        HideCursor(w.w);
+    end
+
+    % alloc temporary data for input events
+    evts(1:20) = struct('t', 0, 'x', 0, 'y', 0);
 
     KbQueueCreate(dev.index, [], 2);
     KbQueueStart(dev.index);
@@ -74,16 +80,15 @@ function _vmr_exp(is_debug, settings)
     % we're assuming linux computers with OpenML support
     % vbl_time helps with scheduling flips, and ref_time helps with relating
     % to input events (b/c it *should* be when the stimulus changes on the screen)
-    [vbl_time, ref_time] = Screen('Flip', w.w);
-    disp_time = ref_time;
+    [vbl_time, disp_time] = Screen('Flip', w.w);
+    ref_time = disp_time;
 
-    KbQueueFlush(dev.index, 2); % only flush KbEventGet
-    %t = 0;
-    trial_count = 1;
     frame_count = 1;
-    within_trial_count = 1;
-    evt = struct('X', w.center(1), 'Y', w.center(2)); % dummy struct, until first input event is generated
-    while state
+    KbQueueFlush(dev.index, 2); % only flush KbEventGet
+    [trial_count, within_trial_frame_count] = sm.get_counters();
+
+
+    while beginning_state = sm.get_state()
         % break if esc pressed
         [~, ~, keys] = KbCheck(-1); % query all keyboards
         if keys(10) % hopefully right-- we unified key positions before?
@@ -100,6 +105,9 @@ function _vmr_exp(is_debug, settings)
         % check number of pending events once, which should be robust
         % to higher-frequency devices
         n_evts = KbEventAvail(dev.index);
+        % TODO: does MATLAB do non-copy slices?? This sucks
+        % is it faster to make this each frame, or to copy from some preallocated chunk?
+        % won't execute if event queue is empty
         for i = 1:n_evts
             % events are in the same coordinates as psychtoolbox (px)
             % eventually, we would figure out mapping so that we get to use
@@ -107,51 +115,51 @@ function _vmr_exp(is_debug, settings)
             % it right yet. So for now, we're stuck with slightly truncated resolution
             % (but still probably plenty)
             [evt, ~] = PsychHID('KbQueueGetEvent', dev.index, 0);
-            %disp([(evt.Time - t) evt.X evt.Y]);
-            %t = evt.Time;
-            % TODO: does MATLAB do non-copy slices?? This sucks
-            data.trials.frames(trial_count).input_events(within_trial_count).time(i) = evt.Time;
-            data.trials.frames(trial_count).input_events(within_trial_count).x(i) = evt.X;
-            data.trials.frames(trial_count).input_events(within_trial_count).y(i) = evt.Y;
+            evts(i).t = evt.Time;
+            evts(i).x = evt.X;
+            evts(i).y = evt.Y;
         end
+
+        % when we increment a trial, we can reset within_trial_frame_count to 1
+        % for the state machine, implement fallthrough by consecutive `if ...`
+        n_evts = max(1, n_evts); % eval state at least once
+        for i = 1:n_evts
+            sm.update(evts(i)); % pass in a single input event
+            e_end_state = sm.get_state();
+            [trial_count, within_trial_frame_count] = sm.get_counters();
+            if evts(i).t > 0
+                data.trials.frames(trial_count).input_events(within_trial_frame_count).t(i) = evts(i).t;
+                data.trials.frames(trial_count).input_events(within_trial_frame_count).x(i) = evts(i).x;
+                data.trials.frames(trial_count).input_events(within_trial_frame_count).y(i) = evts(i).y;
+                data.trials.frames(trial_count).input_events(within_trial_frame_count).state(i) = e_end_state;
+            end
+            i = i + 1;
+        end
+        ending_state = sm.get_state();
+        sm.draw(); % instantiate visuals
+        %Screen('FrameOval', w.w, [255 0 0], CenterRectOnPoint([0 0 mm2px(tgt.block.cursor.size)], evt.X, evt.Y));
+        Screen('DrawingFinished', w.w);
+        % do other work
         % take subset to reduce storage size (& because anything else is junk)
         % again, I *really* wish I could just take an equivalent to a numpy view...
-        data.trials.frames(trial_count).input_events(within_trial_count).time = data.trials.frames(trial_count).input_events(within_trial_count).time(1:n_evts);
-        data.trials.frames(trial_count).input_events(within_trial_count).x = data.trials.frames(trial_count).input_events(within_trial_count).x(1:n_evts);
-        data.trials.frames(trial_count).input_events(within_trial_count).y = data.trials.frames(trial_count).input_events(within_trial_count).y(1:n_evts);
+        data.trials.frames(trial_count).input_events(within_trial_frame_count).t = data.trials.frames(trial_count).input_events(within_trial_frame_count).t(1:n_evts);
+        data.trials.frames(trial_count).input_events(within_trial_frame_count).x = data.trials.frames(trial_count).input_events(within_trial_frame_count).x(1:n_evts);
+        data.trials.frames(trial_count).input_events(within_trial_frame_count).y = data.trials.frames(trial_count).input_events(within_trial_frame_count).y(1:n_evts);
+        data.trials.frames(trial_count).input_events(within_trial_frame_count).state = data.trials.frames(trial_count).input_events(within_trial_frame_count).state(1:n_evts);
 
-        % when we increment a trial, we can reset within_trial_count to 1
-        % for the state machine, implement fallthrough by consecutive `if ...`
-        beginning_state = state; % store initial state for data
-        if state == states.RETURN_TO_CENTER
-            if disp_time > (ref_time + 5)
-                if trial_count >= 2
-                    state = states.END;
-                end
-                state = states.END;
-            end
-        end
-        % draw things based on state
-        % we'll do it inline with state changes for now-- we should *probably* collate if we were
-        % drawing more things, but I expect it'll only be a few circles and some text
-        Screen('FillOval', w.w, [255 255 255], CenterRectOnPoint([0 0 mm2px(tgt.block.cursor_size)], evt.X, evt.Y));
-        Screen('DrawingFinished', w.w);
-        % do we have any useful work to do here? Probably not, if we slept half the frame away
         % swap buffers
         % use vbl_time to schedule subsequent flips, and disp_time for actual
         % stimulus onset time
         [vbl_time, disp_time, ~, missed, ~] = Screen('Flip', w.w, vbl_time + 0.95 * w.ifi);
-        % done the frame, we'll write data now?
-        missed_deadline = missed >= 0;
-        data.trials.frames(trial_count).frame_count(within_trial_count) = frame_count;
-        data.trials.frames(trial_count).vbl_time(within_trial_count) = vbl_time;
-        data.trials.frames(trial_count).disp_time(within_trial_count) = disp_time;
-        data.trials.frames(trial_count).missed_frame_deadline(within_trial_count) = missed_deadline;
-        data.trials.frames(trial_count).start_state(within_trial_count) = beginning_state;
-        data.trials.frames(trial_count).end_state(within_trial_count) = state;
+        % done the frame, we'll write frame data now?
+        data.trials.frames(trial_count).frame_count(within_trial_frame_count) = frame_count;
+        data.trials.frames(trial_count).vbl_time(within_trial_frame_count) = vbl_time;
+        data.trials.frames(trial_count).disp_time(within_trial_frame_count) = disp_time;
+        data.trials.frames(trial_count).missed_frame_deadline(within_trial_frame_count) = missed >= 0;
+        data.trials.frames(trial_count).start_state(within_trial_frame_count) = beginning_state;
+        data.trials.frames(trial_count).end_state(within_trial_frame_count) = ending_state;
 
         frame_count = frame_count + 1; % grows forever/applies across entire experiment
-        within_trial_count = within_trial_count + 1; % remember to reset when moving to new trial
     end
 
     KbQueueStop(dev.index);
@@ -190,7 +198,14 @@ function _vmr_exp(is_debug, settings)
     data.block.start_dt = start_dt;
     % mapping from numbers to strings for state
     % these should be in order, so indexing directly (after +1, depending on lang) with `start_state`/`end_state` should work (I hope)
-    data.block.state_names = fieldnames(states);
+    fnames = fieldnames(states);
+    lfn = length(fnames);
+    fout = cell(lfn, 1);
+    for i = 1:lfn
+        name = fnames{i};
+        fout{states.(name)+1} = name;
+    end
+    data.block.state_names = fout;
     
     % copy common things over
     for fn = fieldnames(tgt.block)'

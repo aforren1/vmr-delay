@@ -1,0 +1,1 @@
+% given a sigmoidal acceleration profile, how poorly do different interpolations do?
