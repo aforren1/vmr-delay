@@ -37,7 +37,7 @@ classdef StateMachine < handle
             % keep track of trial summary data here, and write out later
         end
 
-        function update(sm, evt, last_vbl)
+        function update(sm, evts, last_vbl)
             % NB: evt might be empty
             % This function only runs once a frame on the latest input event
 
@@ -50,9 +50,9 @@ classdef StateMachine < handle
             tgt = sm.tgt;
             x_mm2px = sm.x_mm2px;
             y_mm2px = sm.y_mm2px;
-            if ~isempty(evt) % non-empty event
-                sm.cursor.x = evt.x;
-                sm.cursor.y = evt.y;
+            if ~isempty(evts) % non-empty event
+                sm.cursor.x = evts(end).x;
+                sm.cursor.y = evts(end).y;
             end
 
             est_next_vbl = last_vbl + w.ifi;

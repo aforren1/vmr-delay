@@ -119,8 +119,8 @@ function _vmr_exp(is_debug, settings)
         if n_evts < 1
             sm.update([], vbl_time);
         else
-            % only process latest input event
-            sm.update(evts(n_evts), vbl_time);
+            % pass all input events so we can get a decent RT if need be
+            sm.update(evts(1:n_evts), vbl_time);
         end
         sm.draw(); % instantiate visuals
         Screen('DrawingFinished', w.w);
