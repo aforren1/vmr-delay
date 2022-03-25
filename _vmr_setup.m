@@ -24,6 +24,7 @@ function vmr_inner(is_debug)
         ignore_function_time_stamp("all");
     end
     ref_path = fileparts(mfilename('fullpath'));
+    addpath(fullfile(ref_path, 'fns')); % add misc things to search path
     cache_path = fullfile(ref_path, 'cache.json');
     test_tgt = fullfile(ref_path, 'tgt', 'test.tgt.json');
     default_settings = struct('id', 'test', 'tgt_path', test_tgt, 'data_path', fullfile(ref_path, 'data'));

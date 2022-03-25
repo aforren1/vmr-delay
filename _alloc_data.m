@@ -16,8 +16,7 @@ function data = _alloc_data(n_trials)
     z =  zeros(MAX_INPUT_EVENTS_FRAME, 1);
     input_evts = struct('t', z, ...
                         'x', z, ...
-                        'y', z, ...
-                        'state', z);
+                        'y', z);
     
     % each frame
     MAX_FRAMES_PER_TRIAL = 240 * 30; % 30 seconds

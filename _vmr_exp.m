@@ -3,13 +3,6 @@ function _vmr_exp(is_debug, settings)
     start_unix = floor(time());
     start_dt = datestr(clock(), 31); %Y-M-D H:M:S
     % constants
-    GREEN = [0 255 0];
-    RED = [255 0 0];
-    WHITE = [255 255 255];
-    BLACK = [0 0 0];
-    GRAY30 = [77 77 77];
-    GRAY50 = [127 127 127];
-    GRAY70 = [179 179 179];
     X_MM2PX = 0.2832; % pixel pitch, specific to "real" monitor
     Y_MM2PX = 0.2802;
     X_MM2PX_INV = 1 / X_MM2PX;
@@ -27,6 +20,7 @@ function _vmr_exp(is_debug, settings)
 
     % turn off splash
     KbName('UnifyKeyNames');
+    ESC = KbName('ESCAPE');
     Screen('Preference', 'VisualDebugLevel', 3);
     screens = Screen('Screens');
     max_scr = max(screens);
@@ -60,7 +54,7 @@ function _vmr_exp(is_debug, settings)
     % and for this round, we've just gotten the size from the manual (see mm2px* above)
     % [w.disp.width, w.disp.height] = Screen('DisplaySize', max_scr);
 
-    sm = StateMachine(tgt, w, mm2px);
+    sm = StateMachine(tgt, w, mm2px, x_mm2px, y_mm2px);
 
     dev = _find_device(); % get the pen (or mouse, if testing)
     % hide the cursor
@@ -85,13 +79,11 @@ function _vmr_exp(is_debug, settings)
 
     frame_count = 1;
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
-    [trial_count, within_trial_frame_count] = sm.get_counters();
 
-
-    while beginning_state = sm.get_state()
+    while (beginning_state = sm.get_state())
         % break if esc pressed
         [~, ~, keys] = KbCheck(-1); % query all keyboards
-        if keys(10) % hopefully right-- we unified key positions before?
+        if keys(ESC)
             error('Escape was pressed.');
         end
 
@@ -122,30 +114,29 @@ function _vmr_exp(is_debug, settings)
 
         % when we increment a trial, we can reset within_trial_frame_count to 1
         % for the state machine, implement fallthrough by consecutive `if ...`
-        n_evts = max(1, n_evts); % eval state at least once
-        for i = 1:n_evts
-            sm.update(evts(i)); % pass in a single input event
-            e_end_state = sm.get_state();
-            [trial_count, within_trial_frame_count] = sm.get_counters();
-            if evts(i).t > 0
-                data.trials.frames(trial_count).input_events(within_trial_frame_count).t(i) = evts(i).t;
-                data.trials.frames(trial_count).input_events(within_trial_frame_count).x(i) = evts(i).x;
-                data.trials.frames(trial_count).input_events(within_trial_frame_count).y(i) = evts(i).y;
-                data.trials.frames(trial_count).input_events(within_trial_frame_count).state(i) = e_end_state;
-            end
-            i = i + 1;
+        % grab counters before they're updated for this frame
+        [trial_count, within_trial_frame_count] = sm.get_counters();
+        if n_evts < 1
+            sm.update([], vbl_time);
+        else
+            % only process latest input event
+            sm.update(evts(n_evts), vbl_time);
+        end
+        sm.draw(); % instantiate visuals
+        Screen('DrawingFinished', w.w);
+        % do other work in our free time
+        for i = 1:n_evts % skips if n_evts == 0
+            data.trials.frames(trial_count).input_events(within_trial_frame_count).t(i) = evts(i).t;
+            data.trials.frames(trial_count).input_events(within_trial_frame_count).x(i) = evts(i).x;
+            data.trials.frames(trial_count).input_events(within_trial_frame_count).y(i) = evts(i).y;
+            % TODO: should we store (redundant) position in physical units, or leave for post-processing?
         end
         ending_state = sm.get_state();
-        sm.draw(); % instantiate visuals
-        %Screen('FrameOval', w.w, [255 0 0], CenterRectOnPoint([0 0 mm2px(tgt.block.cursor.size)], evt.X, evt.Y));
-        Screen('DrawingFinished', w.w);
-        % do other work
         % take subset to reduce storage size (& because anything else is junk)
         % again, I *really* wish I could just take an equivalent to a numpy view...
         data.trials.frames(trial_count).input_events(within_trial_frame_count).t = data.trials.frames(trial_count).input_events(within_trial_frame_count).t(1:n_evts);
         data.trials.frames(trial_count).input_events(within_trial_frame_count).x = data.trials.frames(trial_count).input_events(within_trial_frame_count).x(1:n_evts);
         data.trials.frames(trial_count).input_events(within_trial_frame_count).y = data.trials.frames(trial_count).input_events(within_trial_frame_count).y(1:n_evts);
-        data.trials.frames(trial_count).input_events(within_trial_frame_count).state = data.trials.frames(trial_count).input_events(within_trial_frame_count).state(1:n_evts);
 
         % swap buffers
         % use vbl_time to schedule subsequent flips, and disp_time for actual
@@ -158,6 +149,25 @@ function _vmr_exp(is_debug, settings)
         data.trials.frames(trial_count).missed_frame_deadline(within_trial_frame_count) = missed >= 0;
         data.trials.frames(trial_count).start_state(within_trial_frame_count) = beginning_state;
         data.trials.frames(trial_count).end_state(within_trial_frame_count) = ending_state;
+
+        if sm.will_be_new_trial()
+            % prune our giant dataset, this is the last frame of the trial
+            % TODO: should we let saving trial-level data be handled by the state machine,
+            % or let it leak here?
+            data.trials.delay(trial_count) = tgt.trial(trial_count).delay;
+            data.trials.target(trial_count) = tgt.trial(trial_count).target;
+            data.trials.is_manipulated(trial_count) = tgt.trial(trial_count).is_manipulated;
+            data.trials.manipulation_angle(trial_count) = tgt.trial(trial_count).manipulation_angle;
+            data.trials.is_endpoint(trial_count) = tgt.trial(trial_count).is_endpoint;
+            % alternatively, we just save these without context
+            data.trials.frames(trial_count).frame_count = data.trials.frames(trial_count).frame_count(1:within_trial_frame_count);
+            data.trials.frames(trial_count).vbl_time = data.trials.frames(trial_count).vbl_time(1:within_trial_frame_count);
+            data.trials.frames(trial_count).disp_time = data.trials.frames(trial_count).disp_time(1:within_trial_frame_count);
+            data.trials.frames(trial_count).missed_frame_deadline = data.trials.frames(trial_count).missed_frame_deadline(1:within_trial_frame_count);
+            data.trials.frames(trial_count).start_state = data.trials.frames(trial_count).start_state(1:within_trial_frame_count);
+            data.trials.frames(trial_count).end_state = data.trials.frames(trial_count).end_state(1:within_trial_frame_count);
+            data.trials.frames(trial_count).input_events = data.trials.frames(trial_count).input_events(1:within_trial_frame_count);
+        end
 
         frame_count = frame_count + 1; % grows forever/applies across entire experiment
     end
@@ -213,7 +223,7 @@ function _vmr_exp(is_debug, settings)
     end
 
     % write data
-    mkdir(settings.data_path);
+    mkdir(settings.data_path); % might already exist, but it doesn't error if so
     to_json(fullfile(settings.data_path, strcat(settings.id, '_', num2str(data.block.start_unix), '.json')), data, 1);
     _cleanup(); % clean up
 end

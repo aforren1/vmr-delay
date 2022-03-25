@@ -5,8 +5,8 @@
 all: build
 
 build:
-	mkoctfile --mex matlab-json/json_decode.c matlab-json/jsmn.c
-	mkoctfile --mex matlab-json/json_encode.c
+	mkoctfile --mex matlab-json/json_decode.c matlab-json/jsmn.c -o fns/json_decode.mex
+	mkoctfile --mex matlab-json/json_encode.c -o fns/json_encode.mex
 
 clean:
 	rm json_decode.mex json_encode.mex

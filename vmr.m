@@ -1,4 +1,4 @@
-#!/usr/bin/env octave
+#!/usr/bin/env -S octave --no-gui
 # (set as executable via "chmod +x vmr.m")
 args = argv();
 if length(args) > 0
