@@ -103,13 +103,12 @@ function _vmr_exp(is_debug, settings)
                     error('Escape was pressed.');
                 end
             end
-            continue % restart this
-
+            continue % restart this frame
         end
 
         % sleep part of the frame to reduce lag
         % TODO: tweak this if we end up doing the 120hz + strobing
-        % we probably only need a 1-2ms to do state updates
+        % we probably only need 1-2ms to do state updates
         % for 240hz, this cuts off up to 2.5ms or so?
         WaitSecs('UntilTime', vbl_time + 0.6 * w.ifi);
 
