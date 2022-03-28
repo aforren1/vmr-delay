@@ -4,4 +4,5 @@ function _cleanup()
     PsychPortAudio('Close');
     PsychHID('KbQueueRelease');
     diary off;
+    ListenChar(0);
 end

@@ -37,7 +37,7 @@ function _vmr_exp(is_debug, settings)
     %Screen('BlendFunction', w.w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     [w.center(1), w.center(2)] = RectCenter(w.rect);
     % assume color is 8 bit, so don't fuss with WhiteIndex/BlackIndex
-
+    Screen('TextSize', w.w, floor(0.025 * w.rect(4)));
     Screen('Flip', w.w); % flip once to warm up
 
     w.fps = Screen('FrameRate', w.w);
@@ -62,6 +62,7 @@ function _vmr_exp(is_debug, settings)
     % alloc temporary data for input events
     evts(1:20) = struct('t', 0, 'x', 0, 'y', 0);
 
+    ListenChar(-1); % disable keys landing in console
     KbQueueCreate(dev.index, [], 2);
     KbQueueStart(dev.index);
 
@@ -74,12 +75,36 @@ function _vmr_exp(is_debug, settings)
 
     frame_count = 1;
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
+    [trial_count, within_trial_frame_count] = sm.get_counters();
 
     while (beginning_state = sm.get_state())
         % break if esc pressed
         [~, ~, keys] = KbCheck(-1); % query all keyboards
         if keys(ESC)
             error('Escape was pressed.');
+        end
+
+        % pause, and restart trial when unpaused
+        if (vbl_time - sm.trial_start_time) > 10
+            warning(sprintf('Paused on trial %i', trial_count));
+            DrawFormattedText(w.w, 'Paused, press "C" to restart trial', 'center', 'center', 255);
+            Screen('Flip', w.w);
+            C = KbName('C');
+            while true
+                [~, keys, ~] = KbWait(-1, 2);
+                if keys(C)
+                    % restart the trial
+                    sm.restart_trial(vbl_time);
+                    KbQueueFlush(dev.index, 2);
+                    break
+                end
+
+                if keys(ESC)
+                    error('Escape was pressed.');
+                end
+            end
+            continue % restart this
+
         end
 
         % sleep part of the frame to reduce lag
@@ -168,7 +193,6 @@ function _vmr_exp(is_debug, settings)
 
     KbQueueStop(dev.index);
     KbQueueRelease(dev.index);
-    Screen('TextSize', w.w, floor(0.05 * w.rect(4)));
     DrawFormattedText(w.w, 'Finished, saving data...', 'center', 'center', 255);
     Screen('Flip', w.w);
 

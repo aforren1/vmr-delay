@@ -2,6 +2,10 @@
 % any reason to use handle? we're never passing this anywhere...
 classdef StateMachine < handle
 
+    properties
+        trial_start_time = 9e99
+    end
+
     properties (Access = private)
         state = states.RETURN_TO_CENTER
         is_transitioning = true
@@ -67,6 +71,7 @@ classdef StateMachine < handle
                     sm.center.y = w.center(2);
                     sm.hold_time = est_next_vbl + 0.2;
                     sm.vis_time = est_next_vbl + 0.5;
+                    sm.trial_start_time = est_next_vbl;
                 end
                 % stuff that runs every frame
                 if est_next_vbl >= sm.vis_time
@@ -181,6 +186,8 @@ classdef StateMachine < handle
             end
             % draw all circles together; never any huge circles, so we only need nice-looking up to a point
             Screen('FillOval', w.w, colors, rects, floor(w.rect(4) * 0.25));
+            % draw trial counter in corner
+            Screen('DrawText', w.w, sprintf('%i/%i', sm.trial_count, length(sm.tgt.trial)), 10, 10, 128);
         end
 
         function state = get_state(sm)
@@ -204,6 +211,13 @@ classdef StateMachine < handle
 
         function tar = get_target_state(sm)
             tar = sm.center_and_mm(sm.target, sm.center);
+        end
+
+        function restart_trial(sm)
+            % restart the current trial
+            sm.state = states.RETURN_TO_CENTER;
+            sm.within_trial_frame_count = 1;
+            sm.trial_start_time = 9e99; % single-frame escape hatch
         end
     end
 
