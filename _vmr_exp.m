@@ -3,14 +3,9 @@ function _vmr_exp(is_debug, settings)
     start_unix = floor(time());
     start_dt = datestr(clock(), 31); %Y-M-D H:M:S
     % constants
-    X_MM2PX = 0.2832; % pixel pitch, specific to "real" monitor
-    Y_MM2PX = 0.2802;
-    X_MM2PX_INV = 1 / X_MM2PX;
-    Y_MM2PX_INV = 1 / Y_MM2PX;
-
-    x_mm2px = @(mm) (mm * X_MM2PX_INV);
-    y_mm2px = @(mm) (mm * Y_MM2PX_INV);
-    mm2px = @(mm) (mm .* [X_MM2PX_INV Y_MM2PX_INV]);
+    X_PITCH = 0.2832; % pixel pitch, specific to "real" monitor
+    Y_PITCH = 0.2802; % note the non-squareness (though for sizes/distances < ~45mm)
+    unit = Unitizer(X_PITCH, Y_PITCH);
     % ORIGIN (offset from center of screen)
 
     % read the .tgt.json
@@ -51,10 +46,10 @@ function _vmr_exp(is_debug, settings)
     % X11 apparently gets it really wrong with extended screen, but even gets height wrong??
     % actually gets it wrong with single screen too, so...
     % randr seems to nail it though
-    % and for this round, we've just gotten the size from the manual (see mm2px* above)
+    % and for this round, we've just gotten the size from the manual (see *_PITCH above)
     % [w.disp.width, w.disp.height] = Screen('DisplaySize', max_scr);
 
-    sm = StateMachine(tgt, w, mm2px, x_mm2px, y_mm2px);
+    sm = StateMachine(tgt, w, unit);
 
     dev = _find_device(); % get the pen (or mouse, if testing)
     % hide the cursor
@@ -127,8 +122,8 @@ function _vmr_exp(is_debug, settings)
         % do other work in our free time
         for i = 1:n_evts % skips if n_evts == 0
             data.trials.frames(trial_count).input_events(within_trial_frame_count).t(i) = evts(i).t;
-            data.trials.frames(trial_count).input_events(within_trial_frame_count).x(i) = evts(i).x;
-            data.trials.frames(trial_count).input_events(within_trial_frame_count).y(i) = evts(i).y;
+            data.trials.frames(trial_count).input_events(within_trial_frame_count).x(i) = unit.x_px2mm(evts(i).x - w.center(1));
+            data.trials.frames(trial_count).input_events(within_trial_frame_count).y(i) = unit.y_px2mm(evts(i).y - w.center(2));
             % TODO: should we store (redundant) position in physical units, or leave for post-processing?
         end
         ending_state = sm.get_state();
@@ -149,6 +144,10 @@ function _vmr_exp(is_debug, settings)
         data.trials.frames(trial_count).missed_frame_deadline(within_trial_frame_count) = missed >= 0;
         data.trials.frames(trial_count).start_state(within_trial_frame_count) = beginning_state;
         data.trials.frames(trial_count).end_state(within_trial_frame_count) = ending_state;
+        % these are in mm and relative to center point
+        data.trials.frames(trial_count).cursor(within_trial_frame_count) = sm.get_cursor_state();
+        data.trials.frames(trial_count).target(within_trial_frame_count) = sm.get_target_state();
+
 
         if sm.will_be_new_trial()
             % prune our giant dataset, this is the last frame of the trial
@@ -159,13 +158,9 @@ function _vmr_exp(is_debug, settings)
                 data.trials.(fn{1})(trial_count) = tgt.trial(trial_count).(fn{1});
             end
             % alternatively, we just save these without context
-            data.trials.frames(trial_count).frame_count = data.trials.frames(trial_count).frame_count(1:within_trial_frame_count);
-            data.trials.frames(trial_count).vbl_time = data.trials.frames(trial_count).vbl_time(1:within_trial_frame_count);
-            data.trials.frames(trial_count).disp_time = data.trials.frames(trial_count).disp_time(1:within_trial_frame_count);
-            data.trials.frames(trial_count).missed_frame_deadline = data.trials.frames(trial_count).missed_frame_deadline(1:within_trial_frame_count);
-            data.trials.frames(trial_count).start_state = data.trials.frames(trial_count).start_state(1:within_trial_frame_count);
-            data.trials.frames(trial_count).end_state = data.trials.frames(trial_count).end_state(1:within_trial_frame_count);
-            data.trials.frames(trial_count).input_events = data.trials.frames(trial_count).input_events(1:within_trial_frame_count);
+            for fn = fieldnames(data.trials.frames(trial_count))'
+                data.trials.frames(trial_count).(fn{1}) = data.trials.frames(trial_count).(fn{1})(1:within_trial_frame_count);
+            end
         end
 
         frame_count = frame_count + 1; % grows forever/applies across entire experiment
@@ -202,7 +197,7 @@ function _vmr_exp(is_debug, settings)
     data.block.gl_version = info.GLVersion;
     data.block.missed_deadlines = info.MissedDeadlines;
     data.block.n_flips = info.FlipCount;
-    data.block.pixel_pitch = [X_MM2PX Y_MM2PX];
+    data.block.pixel_pitch = [X_PITCH Y_PITCH];
     data.block.start_unix = start_unix; % whole seconds since unix epoch
     data.block.start_dt = start_dt;
     % mapping from numbers to strings for state

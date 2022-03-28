@@ -7,9 +7,7 @@ classdef StateMachine < handle
         is_transitioning = true
         w % window struct (read-only)
         tgt % target table
-        mm2px % handle to mm2px lambda fn
-        x_mm2px
-        y_mm2px
+        un % unit handler
         trial_summary_data % summary data per-trial (e.g. RT, est reach angle,...)
         trial_count = 1
         within_trial_frame_count = 1
@@ -28,12 +26,10 @@ classdef StateMachine < handle
 
     methods
 
-        function sm = StateMachine(tgt, win_info, mm2px, x_mm2px, y_mm2px)
+        function sm = StateMachine(tgt, win_info, unit)
             sm.w = win_info;
             sm.tgt = tgt;
-            sm.mm2px = mm2px;
-            sm.x_mm2px = x_mm2px;
-            sm.y_mm2px = y_mm2px;
+            sm.un = unit;
             % keep track of trial summary data here, and write out later
         end
 
@@ -48,8 +44,6 @@ classdef StateMachine < handle
             sm.within_trial_frame_count = sm.within_trial_frame_count + 1;
             w = sm.w;
             tgt = sm.tgt;
-            x_mm2px = sm.x_mm2px;
-            y_mm2px = sm.y_mm2px;
             if ~isempty(evts) % non-empty event
                 sm.cursor.x = evts(end).x;
                 sm.cursor.y = evts(end).y;
@@ -89,8 +83,8 @@ classdef StateMachine < handle
                 if sm.entering()
                     sm.target.vis = true;
                     t = tgt.trial(sm.trial_count).target;
-                    tx = x_mm2px(t.x);
-                    ty = y_mm2px(t.y);
+                    tx = sm.un.x_mm2px(t.x);
+                    ty = sm.un.y_mm2px(t.y);
                     sm.target.x = tx + w.center(1);
                     sm.target.y = ty + w.center(2);
                     sm.targ_dist_px = distance(tx, 0, ty, 0);
@@ -150,11 +144,10 @@ classdef StateMachine < handle
             colors = zeros(3, MAX_NUM_CIRCLES, 'uint8'); % rgb
             counter = 1;
             blk = sm.tgt.block;
-            mm2px = sm.mm2px;
             w = sm.w;
             % TODO: stick with integer versions?
             if sm.target.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 mm2px(blk.target.size)], sm.target.x, sm.target.y);
+                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.target.size)], sm.target.x, sm.target.y);
                 if sm.state == states.DIST_EXCEEDED
                     colors(:, counter) = 127; %TODO: don't do this
                 else
@@ -164,19 +157,19 @@ classdef StateMachine < handle
             end
 
             if sm.center.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 mm2px(blk.center.size)], sm.center.x, sm.center.y);
+                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.center.size)], sm.center.x, sm.center.y);
                 colors(:, counter) = blk.center.color;
                 counter = counter + 1;
             end
 
             if sm.ep_feedback.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 mm2px(blk.cursor.size)], sm.ep_feedback.x, sm.ep_feedback.y);
+                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.cursor.size)], sm.ep_feedback.x, sm.ep_feedback.y);
                 colors(:, counter) = blk.cursor.color;
                 counter = counter + 1;
             end
 
             if sm.cursor.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 mm2px(blk.cursor.size)], sm.cursor.x, sm.cursor.y);
+                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.cursor.size)], sm.cursor.x, sm.cursor.y);
                 colors(:, counter) = blk.cursor.color;
                 counter = counter + 1;
             end
@@ -197,6 +190,15 @@ classdef StateMachine < handle
             % should we subset?
             val = sm.is_transitioning && (sm.state == states.RETURN_TO_CENTER || sm.state == states.END);
         end
+
+        % compute where cursor & target are in mm relative to center (which is assumed to be fixed)
+        function cur = get_cursor_state(sm)
+            cur = sm.center_and_mm(sm.cursor, sm.center);
+        end
+
+        function tar = get_target_state(sm)
+            tar = sm.center_and_mm(sm.target, sm.center);
+        end
     end
 
     methods (Access = private)
@@ -212,5 +214,9 @@ classdef StateMachine < handle
             sm.state = value;
         end
 
+        function v1 = center_and_mm(sm, v1, v2)
+            v1.x = sm.un.x_px2mm(v1.x - v2.x);
+            v1.y = sm.un.y_px2mm(v1.y - v2.y);
+        end
     end
 end

@@ -56,7 +56,7 @@ function vmr_inner(is_debug)
     end
 
     if ~found_tablet && ~is_debug
-        if yes_or_no('I could not find the Wacom tablet, should we stop now? ')
+        if y_or_n('I could not find the Wacom tablet, should we stop now? ')
             error('Did not find the tablet (Wacom PTH 860).');
         else
             fprintf('Continuing with mouse...\n\n');
