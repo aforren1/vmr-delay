@@ -6,7 +6,7 @@
 % task-level settings (e.g. origin, target locations/ids, rotation/clamp, target sizes, cursor size)
 % trial-level settings (target id, rotation/clamp angle, delay, ...)
 % when in doubt, use trial-level settings
-% all physical units in mm/deg/ms
+% all physical units in mm/deg/sec
 GREEN = [0 255 0];
 RED = [255 0 0];
 WHITE = [255 255 255];
@@ -29,14 +29,14 @@ block_level.rot_or_clamp = 'clamp';
 block_level.feedback_duration = 0.5; % 500 ms
 block_level.exp_info = 'Experiment info here (version, dates, text description...)'; % TODO: fill
 
-target_angles = linspace(0, 360 - 45, 8);
+target_angles = linspace(0, 360 - 45, 4);
 manip_angles = [zeros(5, 1); (30 * ones(3, 1)); zeros(2, 1)];
 is_manip = [zeros(5, 1); ones(3, 1); zeros(2, 1)];
 delays = [0, 500];
 is_endpoints = [zeros(3, 1); ones(7, 1)];
 
 for i = 1:N_TRIALS
-    ang = target_angles(randi([1, 8]));
+    ang = target_angles(randi([1, 4]));
     % keep in mind, these are in mm
     trial_level(i).target.x = block_level.target.distance * cosd(ang);
     trial_level(i).target.y = block_level.target.distance * sind(ang);
