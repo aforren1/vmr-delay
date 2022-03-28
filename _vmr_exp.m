@@ -72,6 +72,7 @@ function _vmr_exp(is_debug, settings)
     % to input events (b/c it *should* be when the stimulus changes on the screen)
     [vbl_time, disp_time] = Screen('Flip', w.w);
     ref_time = disp_time;
+    was_restarted = false;
 
     frame_count = 1;
     KbQueueFlush(dev.index, 2); % only flush KbEventGet
@@ -86,6 +87,7 @@ function _vmr_exp(is_debug, settings)
 
         % pause, and restart trial when unpaused
         if (vbl_time - sm.trial_start_time) > 10
+            was_restarted = true;
             warning(sprintf('Paused on trial %i', trial_count));
             DrawFormattedText(w.w, 'Paused, press "C" to restart trial', 'center', 'center', 255);
             Screen('Flip', w.w);
@@ -181,6 +183,8 @@ function _vmr_exp(is_debug, settings)
             for fn = fieldnames(tgt.trial(trial_count))'
                 data.trials.(fn{1})(trial_count) = tgt.trial(trial_count).(fn{1});
             end
+            data.trials.was_restarted(trial_count) = was_restarted;
+            was_restarted = false;
             % alternatively, we just save these without context
             for fn = fieldnames(data.trials.frames(trial_count))'
                 data.trials.frames(trial_count).(fn{1}) = data.trials.frames(trial_count).(fn{1})(1:within_trial_frame_count);
