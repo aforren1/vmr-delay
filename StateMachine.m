@@ -76,7 +76,7 @@ classdef StateMachine < handle
                 % hold in center for 200 ms
                 % TODO: are the visuals the right sizes? collision doesn't look right in debug...
                 if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
-                    tgt.block.center.size * 0.5)
+                    tgt.block.center.size)
                     if est_next_vbl >= sm.hold_time
                         sm.state = states.REACH;
                     end

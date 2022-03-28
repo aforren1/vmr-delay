@@ -32,7 +32,7 @@ function _vmr_exp(is_debug, settings)
         % to do this. Can't use OS rotation, otherwise PTB gets mad
         PsychImaging('PrepareConfiguration');
         PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
-        [w.w, w.rect] = Screen('OpenWindow', max_scr, 0);
+        [w.w, w.rect] = PsychImaging('OpenWindow', max_scr, 0);
     end
     %Screen('BlendFunction', w.w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     [w.center(1), w.center(2)] = RectCenter(w.rect);
