@@ -22,6 +22,7 @@ classdef StateMachine < handle
         vis_time = 0
         targ_dist_px = 0
         feedback_dur = 0
+        summary_data
     end
 
     methods
@@ -31,6 +32,11 @@ classdef StateMachine < handle
             sm.tgt = tgt;
             sm.un = unit;
             % keep track of trial summary data here, and write out later
+            % sm.summary_data(1:length(tgt.trial)) = struct(...
+            %   'ep_angle_deg', 0, ... % angle of endpoint feedback in degrees, relative to target
+            %   'cur_angle_deg', 0, ... % angle of cursor in degrees, relative to target (will ~= ep_angle_deg if clamp)
+
+            % );
         end
 
         function update(sm, evts, last_vbl)
@@ -104,16 +110,16 @@ classdef StateMachine < handle
                     sm.cursor.vis = false;
                     sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
                     trial = tgt.trial(sm.trial_count);
-                    if trial.is_endpoint
+                    if trial.is_endpoint % TODO: always true? or will we have washout...
                         sm.ep_feedback.vis = true;
-                        % TODO: position endpoint feedback based on condition
+                        cur_theta = atan2(sm.cursor.y - w.center(2), sm.cursor.x - w.center(1));
                         if trial.is_manipulated
                             %TODO: implement rotation
                             % get angle of target in deg, add clamp offset, then to rad
                             target_angle = atan2d(sm.target.y - w.center(2), sm.target.x - w.center(1));
                             theta = deg2rad(target_angle + trial.manipulation_angle);
                         else
-                            theta = atan2(sm.cursor.y - w.center(2), sm.cursor.x - w.center(1));
+                            theta = cur_theta;
                         end
                         % use earlier sm.targ_dist_px for extent
                         sm.ep_feedback.x = sm.targ_dist_px * cos(theta) + w.center(1);
@@ -141,15 +147,15 @@ classdef StateMachine < handle
             % drawing; keep order in mind?
             MAX_NUM_CIRCLES = 4; % max 4 circles ever
             rects = zeros(4, MAX_NUM_CIRCLES);
-            colors = zeros(3, MAX_NUM_CIRCLES, 'uint8'); % rgb
+            colors = zeros(3, MAX_NUM_CIRCLES, 'uint8'); % rgb255
             counter = 1;
             blk = sm.tgt.block;
             w = sm.w;
-            % TODO: stick with integer versions?
+            % TODO: stick with integer versions of CenterRectOnPoint*?
             if sm.target.vis
                 rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.target.size)], sm.target.x, sm.target.y);
                 if sm.state == states.DIST_EXCEEDED
-                    colors(:, counter) = 127; %TODO: don't do this
+                    colors(:, counter) = 127; %TODO: don't do this, set it from elsewhere
                 else
                     colors(:, counter) = blk.target.color;
                 end
