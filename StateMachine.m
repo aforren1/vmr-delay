@@ -26,6 +26,10 @@ classdef StateMachine < handle
         vis_time = 0
         targ_dist_px = 0
         feedback_dur = 0
+        target_on_time = 0
+        coarse_rt = 0
+        coarse_mv_start = 0
+        coarse_mt = 0
         summary_data
     end
 
@@ -79,6 +83,8 @@ classdef StateMachine < handle
                 end
                 % transition conditions
                 % hold in center for 200 ms
+                % this was a good example of mm<->px conversion woes, is there a more intuitive way
+                % (have *everything* be in mm until draw time??)
                 if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
                     sm.un.x_mm2px(tgt.block.center.size - tgt.block.cursor.size) * 0.5);
                     if est_next_vbl >= sm.hold_time
@@ -97,6 +103,10 @@ classdef StateMachine < handle
                     ty = sm.un.y_mm2px(t.y);
                     sm.target.x = tx + w.center(1);
                     sm.target.y = ty + w.center(2);
+                    sm.target_on_time = est_next_vbl;
+                    sm.coarse_rt = 0;
+                    sm.coarse_mv_start = 0;
+                    sm.coarse_mt = 0;
                     sm.targ_dist_px = distance(tx, 0, ty, 0);
                     if tgt.trial(sm.trial_count).is_endpoint
                         sm.cursor.vis = false;
@@ -104,9 +114,21 @@ classdef StateMachine < handle
                 end
                 % stuff that runs every frame
                 dist_cur = distance(sm.cursor.x, sm.center.x, sm.cursor.y, sm.center.y);
+                if ~sm.coarse_rt && dist_cur >= sm.un.x_mm2px(tgt.block.center.size * 0.5)
+                    % this is not a good RT to use for analysis, only for feedback purposes
+                    % note that it's framerate-dependent, and only indirectly involves the current
+                    % state of the input device
+                    sm.coarse_rt = est_next_vbl - sm.target_on_time;
+                    sm.coarse_mv_start = est_next_vbl;
+                end
+
                 if dist_cur >= sm.targ_dist_px
+                    % same goes for MT-- do analysis on something thoughtful
+                    sm.coarse_mt = est_next_vbl - sm.coarse_mv_start;
                     sm.state = states.DIST_EXCEEDED;
                 end
+
+                % TODO: do we want to bail early if their RT/MT are bad, or just give feedback after the trial?
             end
 
             if sm.state == states.DIST_EXCEEDED

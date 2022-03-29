@@ -28,6 +28,7 @@ block_level.target = struct('size', 16, 'color', GREEN, 'distance', 80);
 block_level.rot_or_clamp = 'clamp';
 block_level.feedback_duration = 0.5; % 500 ms
 block_level.max_mt = 0.3; % maximum movement time before warning
+block_level.max_rt = 2; % max reaction time before warning
 block_level.exp_info = 'Experiment info here (version, dates, text description...)'; % TODO: fill
 
 target_angles = linspace(0, 360 - 45, 4);
@@ -54,7 +55,7 @@ if IsOctave()
     txt = toJSON(exp_data);
 else
     error('Serialization not implemented for MATLAB.');
-    % probably txt = jsonencode(cache); ?
+    % probably txt = jsonencode(exp_data); ?
 end
 
 fid = fopen(filename, 'w');
