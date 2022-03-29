@@ -23,6 +23,7 @@ classdef StateMachine < handle
         target = struct('x', 0, 'y', 0, 'vis', false);
         ep_feedback = struct('x', 0, 'y', 0, 'vis', false);
         center = struct('x', 0, 'y', 0, 'vis', false);
+        slow_txt_vis = false;
         hold_time = 0
         vis_time = 0
         targ_dist_px = 0
@@ -31,6 +32,7 @@ classdef StateMachine < handle
         coarse_rt = 0
         coarse_mv_start = 0
         coarse_mt = 0
+        debounce = true
         summary_data
     end
 
@@ -79,6 +81,7 @@ classdef StateMachine < handle
                     sm.hold_time = est_next_vbl + 0.2;
                     sm.vis_time = est_next_vbl + 0.5;
                     sm.trial_start_time = est_next_vbl;
+                    sm.debounce = true;
                 end
                 % stuff that runs every frame
                 if est_next_vbl >= sm.vis_time
@@ -89,12 +92,13 @@ classdef StateMachine < handle
                 % this was a good example of mm<->px conversion woes, is there a more intuitive way
                 % (have *everything* be in mm until draw time??)
                 if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
-                    sm.un.x_mm2px(tgt.block.center.size - tgt.block.cursor.size) * 0.5);
-                    if est_next_vbl >= sm.hold_time
+                                   sm.un.x_mm2px(tgt.block.center.size - tgt.block.cursor.size) * 0.5);
+                    if ~sm.debounce && est_next_vbl >= sm.hold_time
                         sm.state = states.REACH;
                     end
                 else
                     sm.hold_time = est_next_vbl + 0.2; % 200 ms in the future
+                    sm.debounce = false;
                 end
             end
 
@@ -178,6 +182,7 @@ classdef StateMachine < handle
                     sm.ep_feedback.vis = false;
                     sm.target.vis = false;
                     sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
+                    sm.slow_txt_vis = true;
                 end
                 sm.state = states.FEEDBACK;
             end
@@ -185,6 +190,7 @@ classdef StateMachine < handle
             if sm.state == states.FEEDBACK
                 if est_next_vbl >= sm.feedback_dur
                     sm.target.vis = false;
+                    sm.slow_txt_vis = false;
                     % end of the trial, are we done?
                     if (sm.trial_count + 1) > length(tgt.trial)
                         sm.state = states.END;
@@ -239,6 +245,10 @@ classdef StateMachine < handle
                 sizes(counter) = sm.un.x_mm2px(blk.cursor.size);
                 colors(:, counter) = blk.cursor.color;
                 counter = counter + 1;
+            end
+
+            if sm.slow_txt_vis
+                DrawFormattedText(w.w, 'Please reach sooner and/or faster.', 'center', 0.4 * w.rect(4), [222, 75, 75]);
             end
             % draw all circles together; never any huge circles, so we only need nice-looking up to a point
             %Screen('FillOval', w.w, colors, rects, floor(w.rect(4) * 0.25));
