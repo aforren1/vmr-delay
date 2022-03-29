@@ -12,6 +12,7 @@ classdef StateMachine < handle
         w % window struct (read-only)
         tgt % target table
         un % unit handler
+        audio % audio handler
         trial_summary_data % summary data per-trial (e.g. RT, est reach angle,...)
         trial_count = 1
         within_trial_frame_count = 1
@@ -39,6 +40,8 @@ classdef StateMachine < handle
             sm.w = win_info;
             sm.tgt = tgt;
             sm.un = unit;
+            sm.audio = AudioManager();
+            sm.audio.add('media/speed_up.wav', 'speed_up');
             % keep track of trial summary data here, and write out later
             % sm.summary_data(1:length(tgt.trial)) = struct(...
             %   'ep_angle_deg', 0, ... % angle of endpoint feedback in degrees, relative to target
@@ -120,15 +123,26 @@ classdef StateMachine < handle
                     % state of the input device
                     sm.coarse_rt = est_next_vbl - sm.target_on_time;
                     sm.coarse_mv_start = est_next_vbl;
+                    if sm.coarse_rt > tgt.block.max_rt
+                        sm.state = states.BAD_MOVEMENT;
+                    end
                 end
 
                 if dist_cur >= sm.targ_dist_px
                     % same goes for MT-- do analysis on something thoughtful
                     sm.coarse_mt = est_next_vbl - sm.coarse_mv_start;
-                    sm.state = states.DIST_EXCEEDED;
+                    if sm.coarse_mt > tgt.block.max_mt
+                        sm.state = states.BAD_MOVEMENT;
+                    else
+                        sm.state = states.DIST_EXCEEDED;
+                    end
                 end
 
-                % TODO: do we want to bail early if their RT/MT are bad, or just give feedback after the trial?
+                % TODO: bail early if bad feedback
+                if (est_next_vbl - sm.target_on_time) > tgt.block.max_rt
+                    sm.state = states.BAD_MOVEMENT;
+                end
+
             end
 
             if sm.state == states.DIST_EXCEEDED
@@ -141,6 +155,7 @@ classdef StateMachine < handle
                         cur_theta = atan2(sm.cursor.y - w.center(2), sm.cursor.x - w.center(1));
                         if trial.is_manipulated
                             %TODO: implement rotation
+                            %TODO: implement delay
                             % get angle of target in deg, add clamp offset, then to rad
                             target_angle = atan2d(sm.target.y - w.center(2), sm.target.x - w.center(1));
                             theta = deg2rad(target_angle + trial.manipulation_angle);
@@ -153,6 +168,21 @@ classdef StateMachine < handle
                     end
                 end
                 % transition?
+                sm.state = states.FEEDBACK;
+            end
+
+            if sm.state == states.BAD_MOVEMENT
+                if sm.entering()
+                    sm.audio.play('speed_up');
+                    sm.cursor.vis = false;
+                    sm.ep_feedback.vis = false;
+                    sm.target.vis = false;
+                    sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
+                end
+                sm.state = states.FEEDBACK;
+            end
+
+            if sm.state == states.FEEDBACK
                 if est_next_vbl >= sm.feedback_dur
                     sm.target.vis = false;
                     % end of the trial, are we done?
