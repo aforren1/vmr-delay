@@ -173,7 +173,7 @@ classdef StateMachine < handle
 
             if sm.state == states.BAD_MOVEMENT
                 if sm.entering()
-                    sm.audio.play('speed_up');
+                    sm.audio.play('speed_up'); %TODO: any need to actually synchronize with screen?
                     sm.cursor.vis = false;
                     sm.ep_feedback.vis = false;
                     sm.target.vis = false;
@@ -268,6 +268,10 @@ classdef StateMachine < handle
 
         function tar = get_target_state(sm)
             tar = sm.center_and_mm(sm.target, sm.center);
+        end
+
+        function ep = get_ep_state(sm)
+            ep = sm.center_and_mm(sm.ep_feedback, sm.center);
         end
 
         function restart_trial(sm)

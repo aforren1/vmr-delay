@@ -112,8 +112,8 @@ function _vmr_exp(is_debug, settings)
         % sleep part of the frame to reduce lag
         % TODO: tweak this if we end up doing the 120hz + strobing
         % we probably only need 1-2ms to do state updates
-        % for 240hz, this cuts off up to 2.5ms or so?
-        WaitSecs('UntilTime', vbl_time + 0.6 * w.ifi);
+        % for 240hz, this cuts off up to 2ms or so?
+        WaitSecs('UntilTime', vbl_time + 0.5 * w.ifi);
 
         % process all pending input events
         % check number of pending events once, which should be robust
@@ -174,6 +174,7 @@ function _vmr_exp(is_debug, settings)
         % these are in mm and relative to center point
         data.trials.frames(trial_count).cursor(within_trial_frame_count) = sm.get_cursor_state();
         data.trials.frames(trial_count).target(within_trial_frame_count) = sm.get_target_state();
+        data.trials.frames(trial_count).ep_feedback(within_trial_frame_count) = sm.get_ep_state();
 
 
         if sm.will_be_new_trial()
