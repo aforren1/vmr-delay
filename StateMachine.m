@@ -142,7 +142,6 @@ classdef StateMachine < handle
                     end
                 end
 
-                % TODO: bail early if bad feedback
                 if (est_next_vbl - sm.target_on_time) > tgt.block.max_rt
                     sm.state = states.BAD_MOVEMENT;
                 end
@@ -181,6 +180,7 @@ classdef StateMachine < handle
                     sm.cursor.vis = false;
                     sm.ep_feedback.vis = false;
                     sm.target.vis = false;
+                    sm.center.vis = false;
                     sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
                     sm.slow_txt_vis = true;
                 end
