@@ -43,6 +43,7 @@ classdef StateMachine < handle
             sm.tgt = tgt;
             sm.un = unit;
             sm.audio = AudioManager();
+            % TODO: better path specification
             sm.audio.add('media/speed_up.wav', 'speed_up');
             % keep track of trial summary data here, and write out later
             % sm.summary_data(1:length(tgt.trial)) = struct(...
@@ -84,15 +85,18 @@ classdef StateMachine < handle
                     sm.debounce = true;
                 end
                 % stuff that runs every frame
-                if est_next_vbl >= sm.vis_time
+                if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
+                                   sm.un.x_mm2px(tgt.block.target.distance * 0.5))
                     sm.cursor.vis = true;
+                else
+                    sm.cursor.vis = false;
                 end
                 % transition conditions
                 % hold in center for 200 ms
                 % this was a good example of mm<->px conversion woes, is there a more intuitive way
                 % (have *everything* be in mm until draw time??)
                 if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
-                                   sm.un.x_mm2px(tgt.block.center.size - tgt.block.cursor.size) * 0.5);
+                                   sm.un.x_mm2px(tgt.block.center.size - tgt.block.cursor.size) * 0.5)
                     if ~sm.debounce && est_next_vbl >= sm.hold_time
                         sm.state = states.REACH;
                     end

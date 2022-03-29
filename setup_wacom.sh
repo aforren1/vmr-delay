@@ -15,6 +15,7 @@ xsetwacom --set "$STYLUS" Threshold 2047
 
 # disconnect from mouse system
 # look for floating devices (5) in PsychHID('Devices')
+#to reattach (e.g. for testing), something like `xinput reattach (dev #) (master #)`
 xinput float "$STYLUS"
 
 # failed mapping attempts, multi-x-windows are hard
