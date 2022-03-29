@@ -27,7 +27,7 @@ function vmr_inner(is_debug)
     addpath(fullfile(ref_path, 'fns')); % add misc things to search path
     cache_path = fullfile(ref_path, 'cache.json');
     test_tgt = fullfile(ref_path, 'tgt', 'test.tgt.json');
-    default_settings = struct('id', 'test', 'tgt_path', test_tgt, 'data_path', fullfile(ref_path, 'data'));
+    default_settings = struct('id', 'test', 'base_path', ref_path, 'tgt_path', test_tgt, 'data_path', fullfile(ref_path, 'data'));
     % load cache file, otherwise fill in default
     try
         cache = from_json(cache_path);

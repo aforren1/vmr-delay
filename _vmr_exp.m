@@ -50,7 +50,7 @@ function _vmr_exp(is_debug, settings)
     % and for this round, we've just gotten the size from the manual (see *_PITCH above)
     % [w.disp.width, w.disp.height] = Screen('DisplaySize', max_scr);
 
-    sm = StateMachine(tgt, w, unit);
+    sm = StateMachine(settings.base_path, tgt, w, unit);
 
     dev = _find_device(); % get the pen (or mouse, if testing)
     % hide the cursor
@@ -186,6 +186,7 @@ function _vmr_exp(is_debug, settings)
                 data.trials.(fn{1})(trial_count) = tgt.trial(trial_count).(fn{1});
             end
             data.trials.was_restarted(trial_count) = was_restarted;
+            data.trials.too_slow(trial_count) = sm.was_too_slow();
             was_restarted = false;
             % alternatively, we just save these without context
             for fn = fieldnames(data.trials.frames(trial_count))'

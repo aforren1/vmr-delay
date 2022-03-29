@@ -33,18 +33,18 @@ classdef StateMachine < handle
         coarse_mv_start = 0
         coarse_mt = 0
         debounce = true
+        too_slow = 0
         summary_data
     end
 
     methods
 
-        function sm = StateMachine(tgt, win_info, unit)
+        function sm = StateMachine(path, tgt, win_info, unit)
             sm.w = win_info;
             sm.tgt = tgt;
             sm.un = unit;
             sm.audio = AudioManager();
-            % TODO: better path specification
-            sm.audio.add('media/speed_up.wav', 'speed_up');
+            sm.audio.add(fullfile(path, 'media', 'speed_up.wav'), 'speed_up');
             % keep track of trial summary data here, and write out later
             % sm.summary_data(1:length(tgt.trial)) = struct(...
             %   'ep_angle_deg', 0, ... % angle of endpoint feedback in degrees, relative to target
@@ -83,6 +83,7 @@ classdef StateMachine < handle
                     sm.vis_time = est_next_vbl + 0.5;
                     sm.trial_start_time = est_next_vbl;
                     sm.debounce = true;
+                    sm.too_slow = 0;
                 end
                 % stuff that runs every frame
                 if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
@@ -187,6 +188,7 @@ classdef StateMachine < handle
                     sm.center.vis = false;
                     sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
                     sm.slow_txt_vis = true;
+                    sm.too_slow = 1;
                 end
                 sm.state = states.FEEDBACK;
             end
@@ -293,6 +295,10 @@ classdef StateMachine < handle
             sm.state = states.RETURN_TO_CENTER;
             sm.within_trial_frame_count = 1;
             sm.trial_start_time = 9e99; % single-frame escape hatch
+        end
+
+        function val = was_too_slow(sm)
+            val = sm.too_slow;
         end
     end
 
