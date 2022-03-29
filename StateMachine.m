@@ -79,9 +79,8 @@ classdef StateMachine < handle
                 end
                 % transition conditions
                 % hold in center for 200 ms
-                % TODO: are the visuals the right sizes? collision doesn't look right in debug...
                 if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
-                    tgt.block.center.size)
+                    sm.un.x_mm2px(tgt.block.center.size - tgt.block.cursor.size) * 0.5);
                     if est_next_vbl >= sm.hold_time
                         sm.state = states.REACH;
                     end
@@ -151,14 +150,16 @@ classdef StateMachine < handle
         function draw(sm)
             % drawing; keep order in mind?
             MAX_NUM_CIRCLES = 4; % max 4 circles ever
-            rects = zeros(4, MAX_NUM_CIRCLES);
+            xys = zeros(2, MAX_NUM_CIRCLES);
+            sizes = zeros(1, MAX_NUM_CIRCLES);
             colors = zeros(3, MAX_NUM_CIRCLES, 'uint8'); % rgb255
             counter = 1;
             blk = sm.tgt.block;
             w = sm.w;
             % TODO: stick with integer versions of CenterRectOnPoint*?
             if sm.target.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.target.size)], sm.target.x, sm.target.y);
+                xys(:, counter) = [sm.target.x sm.target.y];
+                sizes(counter) = sm.un.x_mm2px(blk.target.size);
                 if sm.state == states.DIST_EXCEEDED
                     colors(:, counter) = 127; %TODO: don't do this, set it from elsewhere
                 else
@@ -168,24 +169,28 @@ classdef StateMachine < handle
             end
 
             if sm.center.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.center.size)], sm.center.x, sm.center.y);
+                xys(:, counter) = [sm.center.x sm.center.y];
+                sizes(counter) = sm.un.x_mm2px(blk.center.size);
                 colors(:, counter) = blk.center.color;
                 counter = counter + 1;
             end
 
             if sm.ep_feedback.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.cursor.size)], sm.ep_feedback.x, sm.ep_feedback.y);
+                xys(:, counter) = [sm.ep_feedback.x sm.ep_feedback.y];
+                sizes(counter) = sm.un.x_mm2px(blk.cursor.size);
                 colors(:, counter) = blk.cursor.color;
                 counter = counter + 1;
             end
 
             if sm.cursor.vis
-                rects(:, counter) = CenterRectOnPointd([0 0 sm.un.mm2px(blk.cursor.size)], sm.cursor.x, sm.cursor.y);
+                xys(:, counter) = [sm.cursor.x sm.cursor.y];
+                sizes(counter) = sm.un.x_mm2px(blk.cursor.size);
                 colors(:, counter) = blk.cursor.color;
                 counter = counter + 1;
             end
             % draw all circles together; never any huge circles, so we only need nice-looking up to a point
-            Screen('FillOval', w.w, colors, rects, floor(w.rect(4) * 0.25));
+            %Screen('FillOval', w.w, colors, rects, floor(w.rect(4) * 0.25));
+            Screen('DrawDots', w.w, xys(:, 1:counter), sizes(1:counter), colors(:, 1:counter), [], 3, 1);
             % draw trial counter in corner
             Screen('DrawText', w.w, sprintf('%i/%i', sm.trial_count, length(sm.tgt.trial)), 10, 10, 128);
         end

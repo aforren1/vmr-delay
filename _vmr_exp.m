@@ -37,6 +37,7 @@ function _vmr_exp(is_debug, settings)
     %Screen('BlendFunction', w.w, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     [w.center(1), w.center(2)] = RectCenter(w.rect);
     % assume color is 8 bit, so don't fuss with WhiteIndex/BlackIndex
+    Screen('BlendFunction', w.w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     Screen('TextSize', w.w, floor(0.025 * w.rect(4)));
     Screen('Flip', w.w); % flip once to warm up
 
