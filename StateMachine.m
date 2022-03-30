@@ -87,7 +87,7 @@ classdef StateMachine < handle
                 end
                 % stuff that runs every frame
                 if point_in_circle([sm.cursor.x sm.cursor.y], [sm.center.x sm.center.y], ...
-                                   sm.un.x_mm2px(tgt.block.target.distance * 0.5))
+                                   sm.un.x_mm2px(tgt.block.target.distance * 0.25))
                     sm.cursor.vis = true;
                 else
                     sm.cursor.vis = false;
