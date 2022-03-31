@@ -1,5 +1,5 @@
 % the "real" part of the experiment
-function _vmr_exp(is_debug, settings)
+function _vmr_exp(is_debug, is_demo, settings)
     start_unix = floor(time());
     start_dt = datestr(clock(), 31); %Y-M-D H:M:S
     % constants
@@ -8,8 +8,8 @@ function _vmr_exp(is_debug, settings)
     unit = Unitizer(X_PITCH, Y_PITCH);
     % ORIGIN (offset from center of screen)
 
-    % read the .tgt.json
-    tgt = from_json(settings.tgt_path);
+    % TODO: 
+    tgt = make_tgt(settings.id, settings.group, is_demo, is_debug);
     % allocate data before running anything
     data = _alloc_data(length(tgt.trial));
 
@@ -205,7 +205,6 @@ function _vmr_exp(is_debug, settings)
     % write data
     data.block.id = settings.id;
     data.block.is_debug = is_debug;
-    data.block.tgt_path = settings.tgt_path;
     [status, data.block.git_hash] = system("git log --pretty=format:'%H' -1 2>/dev/null");
     if status
         warning('git hash failed, is git installed?');
@@ -240,6 +239,16 @@ function _vmr_exp(is_debug, settings)
         fout{states.(name)+1} = name;
     end
     data.block.state_names = fout;
+
+    % same with trial labels
+    fnames = fieldnames(trial_labels);
+    lfn = length(fnames);
+    fout = cell(lfn, 1);
+    for i = 1:lfn
+        name = fnames{i};
+        fout{trial_labels.(name)+1} = name;
+    end
+    data.block.trial_labels = fout;
     
     % copy common things over
     for fn = fieldnames(tgt.block)'

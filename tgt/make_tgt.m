@@ -37,8 +37,9 @@ No breaks
 
 %}
 
-function tgt = make_tgt(id, group, is_practice)
+function tgt = make_tgt(id, group, is_practice, is_debug)
 
+disp('Generating tgt, this may take ~ 30 seconds...');
 GREEN = [0 255 0];
 RED = [255 0 0];
 WHITE = [255 255 255];
@@ -49,11 +50,20 @@ GRAY70 = [179 179 179];
 ONLINE_FEEDBACK = true;
 ENDPOINT_FEEDBACK = false;
 % number of "cycles" (all targets seen once)
-N_PRACTICE_REPS = 2;
-N_BASELINE1_REPS = 10;
-N_BASELINE2_REPS = 10;
-N_MANIP_TRIALS = 300; % kept separated out b/c we want to evenly distribute delay values too
-N_WASHOUT_REPS = 10;
+if is_debug
+    N_PRACTICE_REPS = 1;
+    N_BASELINE1_REPS = 1;
+    N_BASELINE2_REPS = 1;
+    N_MANIP_TRIALS = 25; % kept separated out b/c we want to evenly distribute delay values too
+    N_WASHOUT_REPS = 1;
+else
+    N_PRACTICE_REPS = 2;
+    N_BASELINE1_REPS = 10;
+    N_BASELINE2_REPS = 10;
+    N_MANIP_TRIALS = 300; % kept separated out b/c we want to evenly distribute delay values too
+    N_WASHOUT_REPS = 10;
+end
+
 ABS_MANIP_ANGLE = 7.5;
 
 seed = str2num(sprintf('%d', id)); % seed using representation of participant ID
@@ -62,7 +72,7 @@ rand('state', seed);
 
 signs = [-1 1];
 sign = signs(randi(2));
-target_angles = [-60 -30 0 30 60] + 90; % should be centered at top of screen
+target_angles = [-60 -30 0 30 60] + 270; % should be centered at top of screen
 delay_g1 = [0.3 0.3 0.3 0.3 0.3];
 delay_g2 = [0.1 0.2 0.3 0.4 0.5]; % make sure these are evenly distributed
 % so we'll represent each delay once per cycle
@@ -93,7 +103,7 @@ if is_practice
             trial_level(c).manipulation_angle = 0;
             trial_level(c).online_feedback = true;
             trial_level(c).endpoint_feedback = false;
-            trial_level(c).label = 'practice';
+            trial_level(c).label = trial_labels.PRACTICE;
             c = c + 1;
         end
     end
@@ -106,12 +116,17 @@ end
 if group == 1
     check_delays = false;
     delay = delay_g1;
+    extra_delay = 0.2;
 elseif group == 2
     check_delays = false; % TODO: checking both is apparently computationally prohibitive?
     delay = delay_g2;
+    extra_delay = 0;
 else
     error('Neither the Blue Angels nor Group 2.');
 end
+
+block_level.delays = delay;
+block_level.extra_delay = extra_delay;
 
 combos = pairs(target_angles, delay);
 
@@ -162,7 +177,7 @@ for i = 1:N_BASELINE1_REPS
         trial_level(c).manipulation_angle = 0;
         trial_level(c).online_feedback = false;
         trial_level(c).endpoint_feedback = false;
-        trial_level(c).label = 'baseline_1';
+        trial_level(c).label = trial_labels.BASELINE_1;
         c = c + 1;
     end
 end
@@ -176,9 +191,9 @@ for i = 1:N_BASELINE2_REPS
         trial_level(c).delay = 0;
         trial_level(c).is_manipulated = true;
         trial_level(c).manipulation_angle = 0;
-        trial_level(c).online_feedback = false;
+        trial_level(c).online_feedback = true;
         trial_level(c).endpoint_feedback = false;
-        trial_level(c).label = 'baseline_2';
+        trial_level(c).label = trial_labels.BASELINE_2;
         c = c + 1;
     end
 end
@@ -194,7 +209,7 @@ for i = 1:length(angle_delay)
     trial_level(c).manipulation_angle = sign * ABS_MANIP_ANGLE;
     trial_level(c).online_feedback = true;
     trial_level(c).endpoint_feedback = false;
-    trial_level(c).label = 'perturbation';
+    trial_level(c).label = trial_labels.PERTURBATION;
     c = c + 1;
 end
 
@@ -209,12 +224,13 @@ for i = 1:N_WASHOUT_REPS
         trial_level(c).manipulation_angle = 0;
         trial_level(c).online_feedback = false;
         trial_level(c).endpoint_feedback = false;
-        trial_level(c).label = 'washout';
+        trial_level(c).label = trial_labels.WASHOUT;
         c = c + 1;
     end
 end
 
 tgt = struct('block', block_level, 'trial', trial_level);
+disp('Done generating tgt, thanks for waiting!');
 
 end % end function
 

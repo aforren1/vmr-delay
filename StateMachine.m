@@ -23,17 +23,21 @@ classdef StateMachine < handle
         target = struct('x', 0, 'y', 0, 'vis', false);
         ep_feedback = struct('x', 0, 'y', 0, 'vis', false);
         center = struct('x', 0, 'y', 0, 'vis', false);
+        last_event = struct('x', 0, 'y', 0);
         slow_txt_vis = false;
         hold_time = 0
         vis_time = 0
         targ_dist_px = 0
         feedback_dur = 0
+        post_dur = 0
         target_on_time = 0
         coarse_rt = 0
         coarse_mv_start = 0
         coarse_mt = 0
         debounce = true
         too_slow = 0
+        starting_pos
+        delayed_pos
         summary_data
     end
 
@@ -64,9 +68,15 @@ classdef StateMachine < handle
             sm.within_trial_frame_count = sm.within_trial_frame_count + 1;
             w = sm.w;
             tgt = sm.tgt;
+            trial = tgt.trial(sm.trial_count);
             if ~isempty(evts) % non-empty event
                 sm.cursor.x = evts(end).x;
                 sm.cursor.y = evts(end).y;
+                sm.last_event.x = sm.cursor.x;
+                sm.last_event.y = sm.cursor.y;
+            else
+                sm.cursor.x = sm.last_event.x;
+                sm.cursor.y = sm.last_event.y;
             end
 
             est_next_vbl = last_vbl + w.ifi;
@@ -108,9 +118,10 @@ classdef StateMachine < handle
             end
 
             if sm.state == states.REACH
+
                 if sm.entering()
                     sm.target.vis = true;
-                    t = tgt.trial(sm.trial_count).target;
+                    t = trial.target;
                     tx = sm.un.x_mm2px(t.x);
                     ty = sm.un.y_mm2px(t.y);
                     sm.target.x = tx + w.center(1);
@@ -120,27 +131,65 @@ classdef StateMachine < handle
                     sm.coarse_mv_start = 0;
                     sm.coarse_mt = 0;
                     sm.targ_dist_px = distance(tx, 0, ty, 0);
-                    if tgt.trial(sm.trial_count).is_endpoint
-                        sm.cursor.vis = false;
+                    sm.cursor.vis = trial.online_feedback;
+                    sm.starting_pos = sm.cursor;
+                    if trial.delay > 0
+                        % initialize a FIFO with max length corresponding to specified delay
+                        % given seconds, how many frames?
+                        sz = floor(1/w.ifi * trial.delay);
+                        sm.delayed_pos = nan(sz, 2);
                     end
                 end
-                % stuff that runs every frame
-                dist_cur = distance(sm.cursor.x, sm.center.x, sm.cursor.y, sm.center.y);
-                if ~sm.coarse_rt && dist_cur >= sm.un.x_mm2px(tgt.block.center.size * 0.5)
+
+                if trial.delay > 0
+                    % TODO: double check we're not accidentally a frame early?
+                    % NB: this is also not robust to frame drops. Should we do timestamp-based instead?
+                    sm.delayed_pos(1:end-1, :) = sm.delayed_pos(2:end, :);
+                    sm.delayed_pos(end, 1) = sm.cursor.x;
+                    sm.delayed_pos(end, 2) = sm.cursor.y;
+                    if ~isnan(sm.delayed_pos(1, 1))
+                        sm.cursor.x = sm.delayed_pos(1, 1);
+                        sm.cursor.y = sm.delayed_pos(1, 2);
+                    else
+                        % lock in place if we haven't moved yet
+                        sm.cursor.x = sm.starting_pos.x;
+                        sm.cursor.y = sm.starting_pos.y;
+                    end
+
+                end
+
+                cur_dist = distance(sm.cursor.x, sm.center.x, sm.cursor.y, sm.center.y);
+
+                if trial.online_feedback
+                    cur_theta = atan2(sm.cursor.y - w.center(2), sm.cursor.x - w.center(1));
+                    if trial.is_manipulated
+                        %TODO: implement rotation
+                        % get angle of target in deg, add clamp offset, then to rad
+                        target_angle = atan2d(sm.target.y - w.center(2), sm.target.x - w.center(1));
+                        theta = deg2rad(target_angle + trial.manipulation_angle);
+                    else
+                        theta = cur_theta;
+                    end
+                    sm.cursor.x = cur_dist * cos(theta) + w.center(1);
+                    sm.cursor.y = cur_dist * sin(theta) + w.center(2);
+                end
+
+                if ~sm.coarse_rt && cur_dist >= sm.un.x_mm2px(tgt.block.center.size * 0.5)
                     % this is not a good RT to use for analysis, only for feedback purposes
                     % note that it's framerate-dependent, and only indirectly involves the current
                     % state of the input device
                     sm.coarse_rt = est_next_vbl - sm.target_on_time;
                     sm.coarse_mv_start = est_next_vbl;
-                    if sm.coarse_rt > tgt.block.max_rt
+                    % add trial delay here, so that they're not penalized by lagged cursor
+                    if sm.coarse_rt > (tgt.block.max_rt + trial.delay)
                         sm.state = states.BAD_MOVEMENT;
                     end
                 end
 
-                if dist_cur >= sm.targ_dist_px
+                if cur_dist >= sm.targ_dist_px
                     % same goes for MT-- do analysis on something thoughtful
                     sm.coarse_mt = est_next_vbl - sm.coarse_mv_start;
-                    if sm.coarse_mt > tgt.block.max_mt
+                    if sm.coarse_mt > (tgt.block.max_mt + trial.delay)
                         sm.state = states.BAD_MOVEMENT;
                     else
                         sm.state = states.DIST_EXCEEDED;
@@ -157,8 +206,7 @@ classdef StateMachine < handle
                 if sm.entering()
                     sm.cursor.vis = false;
                     sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
-                    trial = tgt.trial(sm.trial_count);
-                    if trial.is_endpoint % TODO: always true? or will we have washout...
+                    if trial.endpoint_feedback
                         sm.ep_feedback.vis = true;
                         cur_theta = atan2(sm.cursor.y - w.center(2), sm.cursor.x - w.center(1));
                         if trial.is_manipulated
@@ -197,13 +245,17 @@ classdef StateMachine < handle
                 if est_next_vbl >= sm.feedback_dur
                     sm.target.vis = false;
                     sm.slow_txt_vis = false;
+                    % wait another chunk to even out iti between groups
+                    sm.post_dur = est_next_vbl + tgt.block.extra_delay;
                     % end of the trial, are we done?
-                    if (sm.trial_count + 1) > length(tgt.trial)
-                        sm.state = states.END;
-                    else
-                        sm.state = states.RETURN_TO_CENTER;
-                        sm.trial_count = sm.trial_count + 1;
-                        sm.within_trial_frame_count = 1;
+                    if est_next_vbl >= sm.post_dur
+                        if (sm.trial_count + 1) > length(tgt.trial)
+                            sm.state = states.END;
+                        else
+                            sm.state = states.RETURN_TO_CENTER;
+                            sm.trial_count = sm.trial_count + 1;
+                            sm.within_trial_frame_count = 1;
+                        end
                     end
                 end
             end
@@ -224,7 +276,7 @@ classdef StateMachine < handle
             if sm.target.vis
                 xys(:, counter) = [sm.target.x sm.target.y];
                 sizes(counter) = sm.un.x_mm2px(blk.target.size);
-                if sm.state == states.DIST_EXCEEDED
+                if sm.state == states.FEEDBACK
                     colors(:, counter) = 127; %TODO: don't do this, set it from elsewhere
                 else
                     colors(:, counter) = blk.target.color;

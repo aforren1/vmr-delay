@@ -1,54 +1,6 @@
-VMR delays
+# VMR delays
 
-Remember to select the right XConf*
-
-endpoint and/or online feedback
-
-Demo with mouse, real thing with tablet
-Use KbQueue* for timing
-
-Single draw to FillOval for all targets + "mouse", use `CenterRectOnPoint` to center and keep track of x/y/w/h in objects
-
-Wacom device info with `lsusb -d 056a:0358 -v`
-
-# data format
-
-Right now, I'm thinking of doing one `.json.gz` per subject (and people are only coming in once?).
-
-## "raw" data
-1 row per frame (because we might go faster than input events come in) (what if target changes state, but we don't have mouse data for that time?)
-array of structs for input events that frame (time, "raw" position)
-trial counter
-trial state
-
-## "easy" data
-
-...
-
-
-## data directory layout
-
-data/
-  subject/
-    session1/
-    session2/
-    ...
-
-
-Use `cvt -r 1920 1080 240` to get modeline settings to update the xorg.conf (check xrandr for exact refresh rate/dims)
-don't flip in xrandr, let PTB do it?
-
-e.g.
-
-```
-PsychImaging('PrepareConfiguration');
-PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
-[theWindow,theRect] = PsychImaging('OpenWindow', whichScreen, 0);
-```
-
-We need to fiddle with `xsetwacom` to put the tablet in the right spot,
-
-https://wiki.archlinux.org/title/wacom_tablet#Adjusting_aspect_ratios
+To run, type either `./vmr.m` (if file has executable permissions) or `octave vmr.m`.
 
 ## Notes
 
@@ -74,3 +26,12 @@ These are 2x faster than saving a mat file, and can be significantly smaller too
 We can have the game state machine be a class, which has an update method that takes the vbl/presentation time,
 the latest input array, frame count, ...
 It would need to handle drawing too?
+
+
+Remember to select the right XConf*
+
+Wacom device info with `lsusb -d 056a:0358 -v`
+
+We need to fiddle with `xsetwacom` to put the tablet in the right spot,
+
+https://wiki.archlinux.org/title/wacom_tablet#Adjusting_aspect_ratios

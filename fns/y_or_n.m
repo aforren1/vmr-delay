@@ -1,15 +1,15 @@
 
 function val = y_or_n(prompt)
     while true
-        tmp = input(prompt, 's');
-        if tmp == 'y' || tmp == 'yes'
+        tmp = input(prompt, "s");
+        if tmp == "y"
             val = true;
             return;
-        else if tmp == 'n' || tmp == 'no'
+        else if tmp == "n"
             val = false;
             return;
         else
-            fprintf('Please respond {y}es or {n}o.\n');
+            fprintf("Please respond {y}es or {n}o.\n");
         end
     end
 end

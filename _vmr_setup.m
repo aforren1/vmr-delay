@@ -25,24 +25,9 @@ function vmr_inner(is_debug)
     end
     ref_path = fileparts(mfilename('fullpath'));
     addpath(fullfile(ref_path, 'fns')); % add misc things to search path
-    cache_path = fullfile(ref_path, 'cache.json');
-    test_tgt = fullfile(ref_path, 'tgt', 'test.tgt.json');
-    default_settings = struct('id', 'test', 'base_path', ref_path, 'tgt_path', test_tgt, 'data_path', fullfile(ref_path, 'data'));
-    % load cache file, otherwise fill in default
-    try
-        cache = from_json(cache_path);
-        f1 = fieldnames(cache);
-        f2 = fieldnames(default_settings);
-        lf1 = length(f1);
-        lf2 = length(f2);
-        lfb = length(intersect(f1, f2));
-        if lf1 != lf2 || lfb != lf2 || lfb != lf1
-            error('Fieldnames have changed, reverting to default.');
-        end
-    catch err
-        % no cache, fill in default
-        cache = default_settings;
-    end
+    addpath(fullfile(ref_path, 'tgt'));
+    settings = struct('id', 'test', 'group', 2, ...
+                      'base_path', ref_path, 'data_path', fullfile(ref_path, 'data'));
 
     % buglet: device info not filled when deviceClass unspecified?
     devs = PsychHID('Devices');
@@ -69,24 +54,24 @@ function vmr_inner(is_debug)
     end
     
     if ~is_debug
-        id = input(sprintf('Enter the participant ID, or leave blank to use the previous value (%s): ', num2str(cache.id)), "s");
+        id = input(sprintf('Enter the participant ID, or leave blank to use the default value (%s): ', num2str(settings.id)), "s");
         if ~isempty(id)
-            cache.id = id;
+            settings.id = id;
         end
     end
 
-    % pick the file to dictate the experiment flow
     if ~is_debug
-        [fname, fpath, ~] = uigetfile('*.tgt.json', 'Pick a tgt.json', cache.tgt_path);
-        if ~fname
-            error('No tgt selected.');
+        while true
+            group = input('What group are they in, 1 or 2? ');
+            if group == 1 || group == 2
+                settings.group = group;
+                break
+            end
+            fprintf('Please pick 1 or 2.\n\n');
         end
-        tgt_path = fullfile(fpath, fname);
-    else
-        tgt_path = test_tgt;
     end
 
-    cache.tgt_path = tgt_path;
-    to_json(cache_path, cache, 0); % save cache for next time
-    _vmr_exp(is_debug, cache);
+    is_demo = ~y_or_n('Is this the real thing (y) or a practice block (n)? ');
+
+    _vmr_exp(is_debug, is_demo, settings);
 end
