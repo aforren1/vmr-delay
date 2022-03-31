@@ -82,7 +82,7 @@ block_level = struct();
 % sizes taken from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5505262/
 % but honestly not picky
 block_level.cursor = struct('size', 4, 'color', WHITE); % mm, white cursor
-block_level.center = struct('size', 12, 'color', WHITE); % TODO: add offset from screen center
+block_level.center = struct('size', 12, 'color', WHITE, 'offset', struct('x', 0, 'y', 80));
 block_level.target = struct('size', 16, 'color', GREEN, 'distance', 80);
 block_level.rot_or_clamp = 'clamp';
 block_level.feedback_duration = 0.5; % 500 ms
@@ -90,6 +90,21 @@ block_level.max_mt = 0.3; % maximum movement time before warning
 block_level.max_rt = 2; % max reaction time before warning
 block_level.exp_info = 'Experiment info here (version, dates, text description...)'; % TODO: fill
 block_level.is_practice = is_practice;
+
+if group == 1
+    check_delays = false;
+    delay = delay_g1;
+    extra_delay = 0.2;
+elseif group == 2
+    check_delays = false; % TODO: checking both is apparently computationally prohibitive?
+    delay = delay_g2;
+    extra_delay = 0;
+else
+    error('Neither the Blue Angels nor Group 2.');
+end
+
+block_level.delays = delay;
+block_level.extra_delay = extra_delay;
 
 if is_practice
     c = 1;
@@ -113,20 +128,6 @@ if is_practice
     
 end
 
-if group == 1
-    check_delays = false;
-    delay = delay_g1;
-    extra_delay = 0.2;
-elseif group == 2
-    check_delays = false; % TODO: checking both is apparently computationally prohibitive?
-    delay = delay_g2;
-    extra_delay = 0;
-else
-    error('Neither the Blue Angels nor Group 2.');
-end
-
-block_level.delays = delay;
-block_level.extra_delay = extra_delay;
 
 combos = pairs(target_angles, delay);
 

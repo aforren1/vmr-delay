@@ -87,8 +87,8 @@ classdef StateMachine < handle
                     sm.center.vis = true;
                     sm.ep_feedback.vis = false;
                     sm.target.vis = false;
-                    sm.center.x = w.center(1);
-                    sm.center.y = w.center(2);
+                    sm.center.x = w.center(1) + sm.un.x_mm2px(tgt.block.center.offset.x);
+                    sm.center.y = w.center(2) + sm.un.y_mm2px(tgt.block.center.offset.y);
                     sm.hold_time = est_next_vbl + 0.2;
                     sm.vis_time = est_next_vbl + 0.5;
                     sm.trial_start_time = est_next_vbl;
@@ -122,15 +122,13 @@ classdef StateMachine < handle
                 if sm.entering()
                     sm.target.vis = true;
                     t = trial.target;
-                    tx = sm.un.x_mm2px(t.x);
-                    ty = sm.un.y_mm2px(t.y);
-                    sm.target.x = tx + w.center(1);
-                    sm.target.y = ty + w.center(2);
+                    sm.target.x = sm.un.x_mm2px(t.x) + sm.center.x;
+                    sm.target.y = sm.un.y_mm2px(t.y) + sm.center.y;
                     sm.target_on_time = est_next_vbl;
                     sm.coarse_rt = 0;
                     sm.coarse_mv_start = 0;
                     sm.coarse_mt = 0;
-                    sm.targ_dist_px = distance(tx, 0, ty, 0);
+                    sm.targ_dist_px = distance(sm.target.x, sm.center.x, sm.target.y, sm.center.y);
                     sm.cursor.vis = trial.online_feedback;
                     sm.starting_pos = sm.cursor;
                     if trial.delay > 0
@@ -161,17 +159,17 @@ classdef StateMachine < handle
                 cur_dist = distance(sm.cursor.x, sm.center.x, sm.cursor.y, sm.center.y);
 
                 if trial.online_feedback
-                    cur_theta = atan2(sm.cursor.y - w.center(2), sm.cursor.x - w.center(1));
+                    cur_theta = atan2(sm.cursor.y - sm.center.y, sm.cursor.x - sm.center.x);
                     if trial.is_manipulated
                         %TODO: implement rotation
                         % get angle of target in deg, add clamp offset, then to rad
-                        target_angle = atan2d(sm.target.y - w.center(2), sm.target.x - w.center(1));
+                        target_angle = atan2d(sm.target.y - sm.center.y, sm.target.x - sm.center.x);
                         theta = deg2rad(target_angle + trial.manipulation_angle);
                     else
                         theta = cur_theta;
                     end
-                    sm.cursor.x = cur_dist * cos(theta) + w.center(1);
-                    sm.cursor.y = cur_dist * sin(theta) + w.center(2);
+                    sm.cursor.x = cur_dist * cos(theta) + sm.center.x;
+                    sm.cursor.y = cur_dist * sin(theta) + sm.center.y;
                 end
 
                 if ~sm.coarse_rt && cur_dist >= sm.un.x_mm2px(tgt.block.center.size * 0.5)
@@ -208,19 +206,19 @@ classdef StateMachine < handle
                     sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
                     if trial.endpoint_feedback
                         sm.ep_feedback.vis = true;
-                        cur_theta = atan2(sm.cursor.y - w.center(2), sm.cursor.x - w.center(1));
+                        cur_theta = atan2(sm.cursor.y - sm.center.y, sm.cursor.x - sm.center.x);
                         if trial.is_manipulated
                             %TODO: implement rotation
                             %TODO: implement delay
                             % get angle of target in deg, add clamp offset, then to rad
-                            target_angle = atan2d(sm.target.y - w.center(2), sm.target.x - w.center(1));
+                            target_angle = atan2d(sm.target.y - sm.center.y, sm.target.x - sm.center.x);
                             theta = deg2rad(target_angle + trial.manipulation_angle);
                         else
                             theta = cur_theta;
                         end
                         % use earlier sm.targ_dist_px for extent
-                        sm.ep_feedback.x = sm.targ_dist_px * cos(theta) + w.center(1);
-                        sm.ep_feedback.y = sm.targ_dist_px * sin(theta) + w.center(2);
+                        sm.ep_feedback.x = sm.targ_dist_px * cos(theta) + sm.center.x;
+                        sm.ep_feedback.y = sm.targ_dist_px * sin(theta) + sm.center.y;
                     end
                 end
                 % transition?
