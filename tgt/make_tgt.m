@@ -37,7 +37,7 @@ No breaks
 
 %}
 
-function tgt = make_tgt(id, group, is_practice, is_debug)
+function tgt = make_tgt(id, group, is_practice, is_debug, is_short)
 
 disp('Generating tgt, this may take ~ 30 seconds...');
 GREEN = [0 255 0];
@@ -50,7 +50,7 @@ GRAY70 = [179 179 179];
 ONLINE_FEEDBACK = true;
 ENDPOINT_FEEDBACK = false;
 % number of "cycles" (all targets seen once)
-if is_debug
+if is_debug || is_short
     N_PRACTICE_REPS = 1;
     N_BASELINE1_REPS = 1;
     N_BASELINE2_REPS = 1;

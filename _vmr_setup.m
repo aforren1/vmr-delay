@@ -19,7 +19,7 @@ function _vmr_setup(debug)
     end
 end
 
-function vmr_inner(is_debug)
+function vmr_inner(is_debug, is_short)
     if IsOctave()
         ignore_function_time_stamp("all");
     end
@@ -73,5 +73,5 @@ function vmr_inner(is_debug)
 
     is_demo = ~y_or_n('Is this the real thing (y) or a practice block (n)? ');
 
-    _vmr_exp(is_debug, is_demo, settings);
+    _vmr_exp(is_debug, is_short, is_demo, settings);
 end

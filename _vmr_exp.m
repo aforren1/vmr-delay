@@ -1,5 +1,5 @@
 % the "real" part of the experiment
-function _vmr_exp(is_debug, is_demo, settings)
+function _vmr_exp(is_debug, is_short, is_demo, settings)
     start_unix = floor(time());
     start_dt = datestr(clock(), 31); %Y-M-D H:M:S
     % constants
@@ -9,7 +9,7 @@ function _vmr_exp(is_debug, is_demo, settings)
     % ORIGIN (offset from center of screen)
 
     % TODO: 
-    tgt = make_tgt(settings.id, settings.group, is_demo, is_debug);
+    tgt = make_tgt(settings.id, settings.group, is_demo, is_debug, is_short);
     % allocate data before running anything
     data = _alloc_data(length(tgt.trial));
 

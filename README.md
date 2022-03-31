@@ -2,6 +2,14 @@
 
 To run, type either `./vmr.m` (if file has executable permissions) or `octave vmr.m`.
 
+Add 's' as an argument to run a short version (proper screen, but shorter conditions) or 'd' to run the debug version (improper screen, with most settings pre-filled and most checks ignored). In other words,
+
+```
+./vmr.m d # debug mode (e.g. for developing on non-rig)
+./vmr.m s # short mode (e.g. for testing all conditions quickly on the rig)
+./vmr.m   # real mode (i.e. for collecting data)
+```
+
 ## Notes
 
 https://psychtoolbox.discourse.group/t/120-240-hz-lcd-display-for-neurophysiology/3525/6 for some other experiences with consumer high-refresh-rate monitors
