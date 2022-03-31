@@ -1,7 +1,7 @@
 % top-level boilerplate-- "real" experiment in _vmr_exp.m
 % Note this assumes only octave. Some things don't exist in MATLAB (e.g. yes_or_no), and
 % I don't want to take the time to fix/standardize at this point
-function _vmr_setup(debug)
+function _vmr_setup(is_debug, is_short)
     delete('latest.log');
     diary 'latest.log'; % write warnings/errs to logfile
     diary on;
@@ -10,7 +10,7 @@ function _vmr_setup(debug)
                  'Things will probably fail if you have not adapted to other systems.']);
     end
     try
-        vmr_inner(debug);
+        vmr_inner(is_debug, is_short);
     catch err
         % clean up PTB here
         % Do we need anything else? Audio/input/..
