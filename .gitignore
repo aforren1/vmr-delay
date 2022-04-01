@@ -3,3 +3,4 @@ foo.*
 octave-workspace
 *.log
 data/
+.Rproj.user
