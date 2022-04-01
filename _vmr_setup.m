@@ -41,7 +41,7 @@ function vmr_inner(is_debug, is_short)
     end
 
     if ~found_tablet && ~is_debug
-        if y_or_n('I could not find the Wacom tablet, should we stop now? ')
+        if strcmp("y", x_or_y('I could not find the Wacom tablet, should we stop now (y or n)?', ["y", "n"]))
             error('Did not find the tablet (Wacom PTH 860).');
         else
             fprintf('Continuing with mouse...\n\n');
@@ -71,7 +71,7 @@ function vmr_inner(is_debug, is_short)
         end
     end
 
-    is_demo = ~y_or_n('Is this the real thing (y) or a practice block (n)? ');
+    is_demo = strcmp("p", x_or_y('Is this the real thing (r) or a practice block (p)? ', ["r", "p"]));
 
     _vmr_exp(is_debug, is_short, is_demo, settings);
 end

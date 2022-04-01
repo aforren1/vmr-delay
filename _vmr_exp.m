@@ -1,5 +1,6 @@
 % the "real" part of the experiment
 function _vmr_exp(is_debug, is_short, is_demo, settings)
+    % profile on;
     start_unix = floor(time());
     start_dt = datestr(clock(), 31); %Y-M-D H:M:S
     % constants
@@ -40,6 +41,7 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
     Screen('BlendFunction', w.w, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     Screen('TextSize', w.w, floor(0.03 * w.rect(4)));
     Screen('Flip', w.w); % flip once to warm up
+    KbCheck(-1); % force mex load
 
     w.fps = Screen('FrameRate', w.w);
     w.ifi = Screen('GetFlipInterval', w.w);
@@ -87,6 +89,8 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
         end
 
         % pause, and restart trial when unpaused
+        % if they just started the trial, this will re-pause if they delayed more than
+        % 20 seconds. I'll fix it eventually, but doesn't really impact things (just jam the "C" key until caught up)
         if (vbl_time - sm.trial_start_time) > 10
             was_restarted = true;
             warning(sprintf('Paused on trial %i', trial_count));
@@ -261,4 +265,6 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
     mkdir(settings.data_path); % might already exist, but it doesn't error if so
     to_json(fullfile(settings.data_path, strcat(settings.id, '_', num2str(data.block.start_unix), '.json')), data, 1);
     _cleanup(); % clean up
+    % profile off;
+    % profshow;
 end
