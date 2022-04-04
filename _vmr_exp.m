@@ -7,9 +7,7 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
     X_PITCH = 0.2832; % pixel pitch, specific to "real" monitor
     Y_PITCH = 0.2802; % note the non-squareness (though for sizes/distances < ~45mm)
     unit = Unitizer(X_PITCH, Y_PITCH);
-    % ORIGIN (offset from center of screen)
 
-    % TODO: 
     tgt = make_tgt(settings.id, settings.group, is_demo, is_debug, is_short);
     % allocate data before running anything
     data = _alloc_data(length(tgt.trial));
@@ -22,7 +20,7 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
     max_scr = max(screens);
 
     w = struct(); % container for window-related things
-    %TODO: do we want antialiasing?
+
     if is_debug % tiny window, skip all the warnings
         Screen('Preference', 'SkipSyncTests', 2); 
         Screen('Preference', 'VisualDebugLevel', 0);
@@ -259,7 +257,6 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
         data.block.(fn{1}) = tgt.block.(fn{1});
     end
 
-    data.tgt = tgt; % save a copy of the tgt just because
     % data.summary = sm.get_summary(); % get the summary array stored by the state machine. Should only be non-tgt stuff (computed reach angle, RT, ...)
     % write data
     mkdir(settings.data_path); % might already exist, but it doesn't error if so

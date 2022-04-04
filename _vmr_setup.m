@@ -1,5 +1,5 @@
 % top-level boilerplate-- "real" experiment in _vmr_exp.m
-% Note this assumes only octave. Some things don't exist in MATLAB (e.g. yes_or_no), and
+% Note this assumes only octave. Some things don't exist in MATLAB, and
 % I don't want to take the time to fix/standardize at this point
 function _vmr_setup(is_debug, is_short)
     delete('latest.log');
@@ -41,7 +41,7 @@ function vmr_inner(is_debug, is_short)
     end
 
     if ~found_tablet && ~is_debug
-        if strcmp("y", x_or_y('I could not find the Wacom tablet, should we stop now (y or n)?', ["y", "n"]))
+        if strcmp("y", x_or_y('I could not find the Wacom tablet, should we stop now (y or n)? ', ["y", "n"]))
             error('Did not find the tablet (Wacom PTH 860).');
         else
             fprintf('Continuing with mouse...\n\n');
@@ -61,14 +61,7 @@ function vmr_inner(is_debug, is_short)
     end
 
     if ~is_debug
-        while true
-            group = input('What group are they in, 1 or 2? ');
-            if group == 1 || group == 2
-                settings.group = group;
-                break
-            end
-            fprintf('Please pick 1 or 2.\n\n');
-        end
+        settings.group = x_or_y('What group are they in, 1 or 2? ', [1, 2]);
     end
 
     is_demo = strcmp("p", x_or_y('Is this the real thing (r) or a practice block (p)? ', ["r", "p"]));

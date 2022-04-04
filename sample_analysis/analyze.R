@@ -1,4 +1,5 @@
 library(RcppSimdJson)
+library(data.table)
 
 dat <- fload('test_1648845108.json.gz', max_simplify_lvl='vector')
 # dat$block has blockwise settings,
@@ -8,3 +9,6 @@ dat <- fload('test_1648845108.json.gz', max_simplify_lvl='vector')
 # there's a lot of metadata in $block that you probably won't need,
 # but at least a few things (id, rot_or_clamp, state_names, trial_labels, ...)
 
+for (i in 1:length(dat[['trials']])) {
+  
+}
