@@ -1,4 +1,4 @@
-
+# TODO: fit spline, and check center is in right place?
 import gzip
 import json
 import numpy as np
