@@ -118,7 +118,6 @@ classdef StateMachine < handle
             end
 
             if sm.state == states.REACH
-
                 if sm.entering()
                     sm.target.vis = true;
                     t = trial.target;
