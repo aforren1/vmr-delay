@@ -101,7 +101,7 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
                 [~, keys, ~] = KbWait(-1, 2);
                 if keys(C)
                     % restart the trial
-                    sm.restart_trial(vbl_time);
+                    sm.restart_trial();
                     KbQueueFlush(dev.index, 2);
                     break
                 end
