@@ -36,6 +36,7 @@ classdef StateMachine < handle
         coarse_mt = 0
         debounce = true
         too_slow = 0
+        _nan_pool
         starting_pos
         delayed_pos
         summary_data
@@ -49,6 +50,8 @@ classdef StateMachine < handle
             sm.un = unit;
             sm.audio = AudioManager();
             sm.audio.add(fullfile(path, 'media', 'speed_up.wav'), 'speed_up');
+            max_nans = ceil(1/sm.w.ifi * 2); % max 2 sec delay
+            sm._nan_pool = nan(max_nans, 2);
             % keep track of trial summary data here, and write out later
             % sm.summary_data(1:length(tgt.trial)) = struct(...
             %   'ep_angle_deg', 0, ... % angle of endpoint feedback in degrees, relative to target
@@ -134,7 +137,7 @@ classdef StateMachine < handle
                         % initialize a FIFO with max length corresponding to specified delay
                         % given seconds, how many frames?
                         sz = floor(1/w.ifi * trial.delay);
-                        sm.delayed_pos = nan(sz, 2);
+                        sm.delayed_pos = sm._nan_pool(1:sz, :);
                     end
                 end
 
@@ -337,6 +340,10 @@ classdef StateMachine < handle
 
         function ep = get_ep_state(sm)
             ep = sm.center_and_mm(sm.ep_feedback, sm.center);
+        end
+
+        function center = get_raw_center_state(sm)
+            center = sm.center;
         end
 
         function restart_trial(sm)

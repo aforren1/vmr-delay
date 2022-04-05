@@ -116,7 +116,7 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
         % we probably only need 1-2ms to do state updates
         % for 240hz, this cuts off up to 2ms or so?
         WaitSecs('UntilTime', vbl_time + 0.5 * w.ifi);
-
+        t0 = GetSecs();
         % process all pending input events
         % check number of pending events once, which should be robust
         % to higher-frequency devices
@@ -147,12 +147,14 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
             sm.update(evts(1:n_evts), vbl_time);
         end
         sm.draw(); % instantiate visuals
+        t1 = GetSecs();
         Screen('DrawingFinished', w.w);
         % do other work in our free time
+        center = sm.get_raw_center_state(); % still in px
         for i = 1:n_evts % skips if n_evts == 0
             data.trials.frames(trial_count).input_events(within_trial_frame_count).t(i) = evts(i).t;
-            data.trials.frames(trial_count).input_events(within_trial_frame_count).x(i) = unit.x_px2mm(evts(i).x - w.center(1));
-            data.trials.frames(trial_count).input_events(within_trial_frame_count).y(i) = unit.y_px2mm(evts(i).y - w.center(2));
+            data.trials.frames(trial_count).input_events(within_trial_frame_count).x(i) = unit.x_px2mm(evts(i).x - center.x);
+            data.trials.frames(trial_count).input_events(within_trial_frame_count).y(i) = unit.y_px2mm(evts(i).y - center.y);
             % TODO: should we store (redundant) position in physical units, or leave for post-processing?
         end
         ending_state = sm.get_state();
@@ -173,6 +175,7 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
         data.trials.frames(trial_count).missed_frame_deadline(within_trial_frame_count) = missed >= 0;
         data.trials.frames(trial_count).start_state(within_trial_frame_count) = beginning_state;
         data.trials.frames(trial_count).end_state(within_trial_frame_count) = ending_state;
+        data.trials.frames(trial_count).frame_comp_dur(within_trial_frame_count) = t1 - t0;
         % these are in mm and relative to center point
         data.trials.frames(trial_count).cursor(within_trial_frame_count) = sm.get_cursor_state();
         data.trials.frames(trial_count).target(within_trial_frame_count) = sm.get_target_state();
