@@ -205,7 +205,6 @@ classdef StateMachine < handle
             if sm.state == states.DIST_EXCEEDED
                 if sm.entering()
                     sm.cursor.vis = false;
-                    sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
                     if trial.endpoint_feedback
                         sm.ep_feedback.vis = true;
                         cur_theta = atan2(sm.cursor.y - sm.center.y, sm.cursor.x - sm.center.x);
@@ -234,7 +233,6 @@ classdef StateMachine < handle
                     sm.ep_feedback.vis = false;
                     sm.target.vis = false;
                     sm.center.vis = false;
-                    sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
                     sm.slow_txt_vis = true;
                     sm.too_slow = 1;
                 end
@@ -242,20 +240,24 @@ classdef StateMachine < handle
             end
 
             if sm.state == states.FEEDBACK
+                if sm.entering()
+                    % wait another chunk to even out iti between groups
+                    sm.feedback_dur = tgt.block.feedback_duration + est_next_vbl;
+                    sm.post_dur = sm.feedback_dur + tgt.block.extra_delay;
+                end
+
                 if est_next_vbl >= sm.feedback_dur
                     sm.target.vis = false;
                     sm.slow_txt_vis = false;
-                    % wait another chunk to even out iti between groups
-                    sm.post_dur = est_next_vbl + tgt.block.extra_delay;
+                end
+                if est_next_vbl >= sm.post_dur
                     % end of the trial, are we done?
-                    if est_next_vbl >= sm.post_dur
-                        if (sm.trial_count + 1) > length(tgt.trial)
-                            sm.state = states.END;
-                        else
-                            sm.state = states.RETURN_TO_CENTER;
-                            sm.trial_count = sm.trial_count + 1;
-                            sm.within_trial_frame_count = 1;
-                        end
+                    if (sm.trial_count + 1) > length(tgt.trial)
+                        sm.state = states.END;
+                    else
+                        sm.state = states.RETURN_TO_CENTER;
+                        sm.trial_count = sm.trial_count + 1;
+                        sm.within_trial_frame_count = 1;
                     end
                 end
             end

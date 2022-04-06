@@ -205,7 +205,7 @@ function _vmr_exp(is_debug, is_short, block_type, settings)
     KbQueueStop(dev.index);
     KbQueueRelease(dev.index);
     DrawFormattedText(w.w, 'Finished, saving data...', 'center', 'center', 255);
-    Screen('Flip', w.w);
+    last_flip_time = Screen('Flip', w.w);
 
     % write data
     data.block.id = settings.id;
@@ -264,6 +264,10 @@ function _vmr_exp(is_debug, is_short, block_type, settings)
     % write data
     mkdir(settings.data_path); % might already exist, but it doesn't error if so
     to_json(fullfile(settings.data_path, strcat(settings.id, '_', num2str(data.block.start_unix), '.json')), data, 1);
+    WaitSecs('UntilTime', last_flip_time + 2); % show last msg for at least 2 sec
+    DrawFormattedText(w.w, 'Done!', 'center', 'center', 255);
+    last_flip_time = Screen('Flip', w.w);
+    WaitSecs('UntilTime', last_flip_time + 1);
     _cleanup(); % clean up
     % profile off;
     % profshow;
