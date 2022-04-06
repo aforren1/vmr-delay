@@ -37,7 +37,7 @@ No breaks
 
 %}
 
-function tgt = make_tgt(id, group, is_practice, is_debug, is_short)
+function tgt = make_tgt(id, group, block_type, is_debug, is_short)
 
 disp('Generating tgt, this may take ~ 30 seconds...');
 GREEN = [0 255 0];
@@ -89,7 +89,7 @@ block_level.feedback_duration = 0.5; % 500 ms
 block_level.max_mt = 0.3; % maximum movement time before warning
 block_level.max_rt = 2; % max reaction time before warning
 block_level.exp_info = 'Experiment info here (version, dates, text description...)'; % TODO: fill
-block_level.is_practice = is_practice;
+block_level.block_type = block_type;
 
 if group == 1
     check_delays = false;
@@ -106,7 +106,7 @@ end
 block_level.delays = delay;
 block_level.extra_delay = extra_delay;
 
-if is_practice
+if strcmp(block_type, "p")
     c = 1;
     for i = 1:N_PRACTICE_REPS
         tmp_angles = shuffle(target_angles);
@@ -126,6 +126,27 @@ if is_practice
     tgt = struct('block', block_level, 'trial', trial_level);
     return;
     
+end
+
+if strcmp(block_type, "c")
+    c = 1;
+    for i = 1:N_PRACTICE_REPS
+        tmp_angles = shuffle(target_angles);
+        for j = tmp_angles
+            trial_level(c).target.x = block_level.target.distance * cosd(j);
+            trial_level(c).target.y = block_level.target.distance * sind(j);
+            trial_level(c).delay = 0;
+            trial_level(c).is_manipulated = true;
+            trial_level(c).manipulation_angle = 0;
+            trial_level(c).online_feedback = true;
+            trial_level(c).endpoint_feedback = false;
+            trial_level(c).label = trial_labels.PRACTICE_CLAMP;
+            c = c + 1;
+        end
+    end
+
+    tgt = struct('block', block_level, 'trial', trial_level);
+    return;
 end
 
 

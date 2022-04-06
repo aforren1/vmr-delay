@@ -91,6 +91,7 @@ trials$target <- NULL
 
 dat <- as.data.table(trials)
 
+trial <- trials$frames[[30]]
 foo <- data.table(dur = trial$frame_comp_dur, st = trial$end_state)
 foo[, t := 1:.N]
 ggplot(foo, aes(x = t, y = dur, colour=factor(st))) + geom_point() + geom_line()

@@ -1,5 +1,5 @@
 % the "real" part of the experiment
-function _vmr_exp(is_debug, is_short, is_demo, settings)
+function _vmr_exp(is_debug, is_short, block_type, settings)
     % profile on;
     start_unix = floor(time());
     start_dt = datestr(clock(), 31); %Y-M-D H:M:S
@@ -8,7 +8,7 @@ function _vmr_exp(is_debug, is_short, is_demo, settings)
     Y_PITCH = 0.2802; % note the non-squareness (though for sizes/distances < ~45mm)
     unit = Unitizer(X_PITCH, Y_PITCH);
 
-    tgt = make_tgt(settings.id, settings.group, is_demo, is_debug, is_short);
+    tgt = make_tgt(settings.id, settings.group, block_type, is_debug, is_short);
     % allocate data before running anything
     data = _alloc_data(length(tgt.trial));
 

@@ -64,7 +64,7 @@ function vmr_inner(is_debug, is_short)
         settings.group = x_or_y('What group are they in, 1 or 2? ', [1, 2]);
     end
 
-    is_demo = strcmp("p", x_or_y('Is this the real thing (r) or a practice block (p)? ', ["r", "p"]));
+    block_type = x_or_y('Is this the veridical practice (p), clamp practice (c) or real thing (r)? ', ["p", "c", "r"]);
 
-    _vmr_exp(is_debug, is_short, is_demo, settings);
+    _vmr_exp(is_debug, is_short, block_type, settings);
 end

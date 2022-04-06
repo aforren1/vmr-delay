@@ -1,10 +1,11 @@
 classdef trial_labels
     properties(Constant)
         % No "real" enums in Octave yet, so fake it
-        PRACTICE = 0
-        BASELINE_1 = 1 % veridical feedback after 2 sec
-        BASELINE_2 = 2 % target appears, move!
-        PERTURBATION = 3 % passed target distance, hide cursor and show endpoint feedback (at lag?)
-        WASHOUT = 4
+        PRACTICE = 0 % veridical feedback
+        PRACTICE_CLAMP = 1 % 0 clamp (move wherever)
+        BASELINE_1 = 2 % no feedback
+        BASELINE_2 = 3 % 0 clamp
+        PERTURBATION = 4 % 7.5 clamp
+        WASHOUT = 5 % no feedback
     end
 end
