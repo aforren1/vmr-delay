@@ -14,15 +14,15 @@ signed_diff_angle <- function(a, b) {
   r * sgn
 }
 
-dat <- fload('test_1649179413.json.gz', max_simplify_lvl='vector')
-# dat$block has blockwise settings,
-# dat$trial has individual trial info
+raw_dat <- fload('adf_1649270675.json.gz', max_simplify_lvl='vector')
+# raw_dat$block has blockwise settings,
+# raw_dat$trial has individual trial info
 
 # there's a lot of metadata in $block that you probably won't need,
 # but at least a few things (id, rot_or_clamp, state_names, trial_labels, ...)
 
 # add some arrays for later
-trials <- dat[['trials']]
+trials <- raw_dat[['trials']]
 lt <- length(trials[['delay']])
 z <- rep(0, lt)
 trials$rt <- z
@@ -34,7 +34,7 @@ trials$trial <- z
 for (i in 1:lt) {
   # for each trial, compute reaction time/initial movement angle
   # 
-  #foo <- rbindlist(dat$trials$frames[i])
+  #foo <- rbindlist(raw_dat$trials$frames[i])
   #print(nrow(foo[missed_frame_deadline==1]))
   trial <- trials$frames[[i]]
   evts <- list()
@@ -90,6 +90,17 @@ trials$frames <- NULL
 trials$target <- NULL
 
 dat <- as.data.table(trials)
+
+dat_cyc <- dat[, .(label = mean(label), dang = mean(diff_angle)), by = (seq(nrow(dat)) - 1) %/% 5]
+baseline_correct <- mean(dat[label==2, diff_angle])
+dat_cyc[, dang := dang - baseline_correct]
+dat_cyc[, lab2 := raw_dat$block$trial_labels[label+1]]
+
+ggplot(dat_cyc, aes(x=seq, y = dang, colour=lab2)) +
+  geom_hline(yintercept = 0, linetype='longdash') +
+  geom_point(size=2) +
+  labs(x = 'Cycle (5 trials)', y = 'Baseline-corrected error (deg)', title = '-7.5° clamp, variable delays') +
+  theme_bw()
 
 trial <- trials$frames[[30]]
 foo <- data.table(dur = trial$frame_comp_dur, st = trial$end_state)
