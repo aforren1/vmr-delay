@@ -56,7 +56,7 @@ desc = {
     'baseline 2: 0 deg clamp, online feedback'
     'clamp: clamp applied, online feedback'
     'washout: no feedback'
-}
+};
 
 disp('Generating tgt, this may take ~ 30 seconds...');
 GREEN = [0 255 0];
@@ -139,7 +139,7 @@ if strcmp(block_type, "p")
             trial_level(c).delay = 0;
             trial_level(c).is_manipulated = false;
             trial_level(c).manipulation_angle = 0;
-            trial_level(c).manipulation_type = 'N/A';
+            trial_level(c).manipulation_type = manip_labels.NONE;
             trial_level(c).online_feedback = true;
             trial_level(c).endpoint_feedback = false;
             trial_level(c).label = trial_labels.PRACTICE;
@@ -162,7 +162,7 @@ if strcmp(block_type, "c")
             trial_level(c).delay = 0;
             trial_level(c).is_manipulated = true;
             trial_level(c).manipulation_angle = 0;
-            trial_level(c).manipulation_type = 'clamp';
+            trial_level(c).manipulation_type = manip_labels.CLAMP;
             trial_level(c).online_feedback = true;
             trial_level(c).endpoint_feedback = false;
             trial_level(c).label = trial_labels.PRACTICE_CLAMP;
@@ -222,7 +222,7 @@ for i = 1:N_BASELINE1_REPS
         trial_level(c).delay = 0;
         trial_level(c).is_manipulated = false;
         trial_level(c).manipulation_angle = 0;
-        trial_level(c).manipulation_type = 'N/A';
+        trial_level(c).manipulation_type = manip_labels.NONE;
         trial_level(c).online_feedback = false;
         trial_level(c).endpoint_feedback = false;
         trial_level(c).label = trial_labels.BASELINE_1;
@@ -239,7 +239,7 @@ for i = 1:N_BASELINE2_REPS
         trial_level(c).delay = 0;
         trial_level(c).is_manipulated = true;
         trial_level(c).manipulation_angle = 0;
-        trial_level(c).manipulation_type = 'clamp';
+        trial_level(c).manipulation_type = manip_labels.CLAMP;
         trial_level(c).online_feedback = true;
         trial_level(c).endpoint_feedback = false;
         trial_level(c).label = trial_labels.BASELINE_2;
@@ -256,7 +256,7 @@ for i = 1:length(angle_delay)
     trial_level(c).delay = ad(2);
     trial_level(c).is_manipulated = true;
     trial_level(c).manipulation_angle = sign * ABS_MANIP_ANGLE;
-    trial_level(c).manipulation_type = 'clamp';
+    trial_level(c).manipulation_type = manip_labels.CLAMP;
     trial_level(c).online_feedback = true;
     trial_level(c).endpoint_feedback = false;
     trial_level(c).label = trial_labels.PERTURBATION;
@@ -272,7 +272,7 @@ for i = 1:N_WASHOUT_REPS
         trial_level(c).delay = 0;
         trial_level(c).is_manipulated = false;
         trial_level(c).manipulation_angle = 0;
-        trial_level(c).manipulation_type = 'N/A';
+        trial_level(c).manipulation_type = manip_labels.NONE;
         trial_level(c).online_feedback = false;
         trial_level(c).endpoint_feedback = false;
         trial_level(c).label = trial_labels.WASHOUT;

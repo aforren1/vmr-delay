@@ -236,6 +236,7 @@ function _vmr_exp(is_debug, is_short, block_type, settings)
     data.block.start_dt = start_dt;
     % mapping from numbers to strings for state
     % these should be in order, so indexing directly (after +1, depending on lang) with `start_state`/`end_state` should work (I hope)
+    warning('off', 'Octave:classdef-to-struct');
     fnames = fieldnames(states);
     lfn = length(fnames);
     fout = cell(lfn, 1);
@@ -254,6 +255,16 @@ function _vmr_exp(is_debug, is_short, block_type, settings)
         fout{trial_labels.(name)+1} = name;
     end
     data.block.trial_labels = fout;
+
+    % same with manipulation labels (should have done cell arrays instead??)
+    fnames = fieldnames(manip_labels);
+    lfn = length(fnames);
+    fout = cell(lfn, 1);
+    for i = 1:lfn
+        name = fnames{i};
+        fout{manip_labels.(name)+1} = name;
+    end
+    data.block.manip_labels = fout;
     
     % copy common things over
     for fn = fieldnames(tgt.block)'
