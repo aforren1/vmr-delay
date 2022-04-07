@@ -5,7 +5,7 @@ Between-subjects design
 
 all physical units in mm/deg/sec
 
-group 1: single delay of 500ms
+group 1: single delay of 300ms
 group 2: [100 200 300 400 500]ms delays
 
 5 targets (-60, -30, 0, 30, 60) (0 = top of screen)
@@ -16,6 +16,9 @@ group 2: [100 200 300 400 500]ms delays
 2 repeats to each target (10 trials)
 online feedback
 
+# practice clamp
+2 repeats to each target (10 trials)
+online feedback, 0 deg clamp
 # real deal
 
 No breaks
@@ -32,12 +35,28 @@ No breaks
   - clamp applied
   - online feedback
 4. Washout
-  - X trials total (y reps per target)
+  - 50 trials total (10 reps per target)
   - no feedback
 
 %}
 
 function tgt = make_tgt(id, group, block_type, is_debug, is_short)
+
+exp_version = 'v1'
+desc = {
+    exp_version
+    'two groups'
+    'group 1 has fixed 300ms delay (+ 200ms extra time between trials to match average ITI with group 2)'
+    'group 2 has 100-500ms delay (with no additional time)'
+    'clamp=+/- 7.5 during manip phase'
+    '5 targets (-60, -30, 0, 30, 60) (0 = top of screen)'
+    'two practice blocks. Veridical feedback & 0 deg clamp'
+    'for manipulation,'
+    'baseline 1: no feedback'
+    'baseline 2: 0 deg clamp, online feedback'
+    'clamp: clamp applied, online feedback'
+    'washout: no feedback'
+}
 
 disp('Generating tgt, this may take ~ 30 seconds...');
 GREEN = [0 255 0];
@@ -66,7 +85,7 @@ end
 
 ABS_MANIP_ANGLE = 7.5;
 
-seed = str2num(sprintf('%d', id)); % seed using representation of participant ID
+seed = str2num(sprintf('%d,', id)); % seed using participant's id
 % NB!! This is Octave-specific. MATLAB should use rng(), otherwise it defaults to an old RNG impl (see e.g. http://walkingrandomly.com/?p=2945)
 rand('state', seed);
 
@@ -88,8 +107,12 @@ block_level.rot_or_clamp = 'clamp';
 block_level.feedback_duration = 0.5; % 500 ms
 block_level.max_mt = 0.3; % maximum movement time before warning
 block_level.max_rt = 2; % max reaction time before warning
-block_level.exp_info = 'Experiment info here (version, dates, text description...)'; % TODO: fill
+block_level.exp_info = sprintf('%s\n', desc{:});
 block_level.block_type = block_type;
+block_level.manipulation_angle = sign * ABS_MANIP_ANGLE;
+block_level.group = group;
+block_level.seed = seed;
+block_level.exp_version = exp_version;
 
 if group == 1
     check_delays = false;
@@ -116,6 +139,7 @@ if strcmp(block_type, "p")
             trial_level(c).delay = 0;
             trial_level(c).is_manipulated = false;
             trial_level(c).manipulation_angle = 0;
+            trial_level(c).manipulation_type = 'N/A';
             trial_level(c).online_feedback = true;
             trial_level(c).endpoint_feedback = false;
             trial_level(c).label = trial_labels.PRACTICE;
@@ -138,6 +162,7 @@ if strcmp(block_type, "c")
             trial_level(c).delay = 0;
             trial_level(c).is_manipulated = true;
             trial_level(c).manipulation_angle = 0;
+            trial_level(c).manipulation_type = 'clamp';
             trial_level(c).online_feedback = true;
             trial_level(c).endpoint_feedback = false;
             trial_level(c).label = trial_labels.PRACTICE_CLAMP;
@@ -197,6 +222,7 @@ for i = 1:N_BASELINE1_REPS
         trial_level(c).delay = 0;
         trial_level(c).is_manipulated = false;
         trial_level(c).manipulation_angle = 0;
+        trial_level(c).manipulation_type = 'N/A';
         trial_level(c).online_feedback = false;
         trial_level(c).endpoint_feedback = false;
         trial_level(c).label = trial_labels.BASELINE_1;
@@ -213,6 +239,7 @@ for i = 1:N_BASELINE2_REPS
         trial_level(c).delay = 0;
         trial_level(c).is_manipulated = true;
         trial_level(c).manipulation_angle = 0;
+        trial_level(c).manipulation_type = 'clamp';
         trial_level(c).online_feedback = true;
         trial_level(c).endpoint_feedback = false;
         trial_level(c).label = trial_labels.BASELINE_2;
@@ -229,6 +256,7 @@ for i = 1:length(angle_delay)
     trial_level(c).delay = ad(2);
     trial_level(c).is_manipulated = true;
     trial_level(c).manipulation_angle = sign * ABS_MANIP_ANGLE;
+    trial_level(c).manipulation_type = 'clamp';
     trial_level(c).online_feedback = true;
     trial_level(c).endpoint_feedback = false;
     trial_level(c).label = trial_labels.PERTURBATION;
@@ -244,6 +272,7 @@ for i = 1:N_WASHOUT_REPS
         trial_level(c).delay = 0;
         trial_level(c).is_manipulated = false;
         trial_level(c).manipulation_angle = 0;
+        trial_level(c).manipulation_type = 'N/A';
         trial_level(c).online_feedback = false;
         trial_level(c).endpoint_feedback = false;
         trial_level(c).label = trial_labels.WASHOUT;
