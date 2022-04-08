@@ -76,8 +76,6 @@ for (i in 1:lt) {
   targ <- trial[['target']][[j]]
   t_ang <- rad2deg(atan2(targ$y, targ$x))
   diff_ang <- signed_diff_angle(ang, t_ang)
-  # nuke the frame info
-  #trials$frames[[i]] <- NULL
   trials$rt[i] <- rt
   trials$target_angle[i] <- t_ang
   trials$target_dist[i] <- sqrt(targ$x^2 + targ$y^2)

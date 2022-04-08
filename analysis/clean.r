@@ -48,6 +48,7 @@ for (i in 1:length(ids)) {
 
 dat_cyc <- rbindlist(dat_cyc)
 dat_cyc[, mega_label := paste0('id: ', id, ' group: ', group, ' clamp angle: ', eventual_angle)]
+dat_cyc[, dang := dang * ifelse(eventual_angle > 0, -1, 1)]
 #labels <- dat_cyc[label=='PERTURBATION', .SD[1], by=id]
 
 ggplot(dat_cyc, aes(x=seq, y = dang, colour=label)) +
