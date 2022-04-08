@@ -91,7 +91,7 @@ trials$target <- NULL
 
 dat <- as.data.table(trials)
 
-dat_cyc <- dat[, .(label = mean(label), dang = mean(diff_angle)), by = (seq(nrow(dat)) - 1) %/% 5]
+dat_cyc <- dat[, .(label = mean(label), dang = mean(diff_angle)), by = c('id', (seq(nrow(dat)) - 1) %/% 5)]
 baseline_correct <- mean(dat[label==2, diff_angle])
 dat_cyc[, dang := dang - baseline_correct]
 dat_cyc[, lab2 := raw_dat$block$trial_labels[label+1]]

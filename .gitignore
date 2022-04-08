@@ -5,3 +5,4 @@ octave-workspace
 data/test_*.json*
 .Rproj.user
 *.Rhistory
+*.png
