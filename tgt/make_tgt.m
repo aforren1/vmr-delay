@@ -42,7 +42,7 @@ No breaks
 
 function tgt = make_tgt(id, group, block_type, is_debug, is_short)
 
-exp_version = 'v1'
+exp_version = 'v1';
 desc = {
     exp_version
     'two groups'

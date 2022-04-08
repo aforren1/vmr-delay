@@ -2,6 +2,6 @@ cache.json
 foo.*
 octave-workspace
 *.log
-data/
+data/test_*.json*
 .Rproj.user
 *.Rhistory

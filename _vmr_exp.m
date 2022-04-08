@@ -218,7 +218,7 @@ function _vmr_exp(is_debug, is_short, block_type, settings)
     if status
         warning('git branch failed, is git installed?');
     end
-    [status, data.block.git_tag] = system("git describe --tags 2>/dev/null");
+    [status, data.block.git_tag] = system("git describe --tags | tr -d '\n' 2>/dev/null");
     if status
         warning('git tag failed, has a release been tagged?');
     end
