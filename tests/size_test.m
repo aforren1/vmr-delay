@@ -4,7 +4,7 @@ max_scr = max(screens);
 w = struct();
 PsychImaging('PrepareConfiguration');
 PsychImaging('AddTask', 'General', 'UseDisplayRotation', 180);
-[w.w, w.rect] = Screen('OpenWindow', max_scr, 0);
+[w.w, w.rect] = PsychImaging('OpenWindow', max_scr, 0);
 
 [w.center(1), w.center(2)] = RectCenter(w.rect);
 

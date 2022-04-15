@@ -48,7 +48,7 @@ for (i in 1:length(ids)) {
 
 dat_cyc <- rbindlist(dat_cyc)
 dat_cyc[, mega_label := paste0('id: ', id, ' group: ', group, ' clamp angle: ', eventual_angle)]
-dat_cyc[, dang := dang * ifelse(eventual_angle > 0, -1, 1)]
+dat_cyc[, dang := dang * -sign(eventual_angle)]
 #labels <- dat_cyc[label=='PERTURBATION', .SD[1], by=id]
 
 ggplot(dat_cyc, aes(x=seq, y = dang, colour=label)) +
@@ -56,4 +56,23 @@ ggplot(dat_cyc, aes(x=seq, y = dang, colour=label)) +
   geom_point(size=2) +
   labs(x = 'Cycle (5 trials)', y = 'Baseline-corrected error (deg)') +
   theme_bw() + 
-  facet_wrap(~mega_label)
+  facet_wrap(~mega_label, ncol=2)
+
+
+# mean aftereffect per person (baseline subtracted)
+# 
+baseline <- dat[label=='BASELINE_1', .(bs = mean(diff_angle)), by=id]
+angs <- dat[label == 'PERTURBATION', .(ang = manipulation_angle[1]), by=id]
+
+after <- dat[label=='WASHOUT']
+
+after <- after[baseline, on = .(id)]
+after[, bs_corrected_angle := diff_angle - bs]
+after <- after[angs, on = .(id)]
+after[, bs_corrected_angle := bs_corrected_angle * -sign(ang)]
+after[, group := factor(group)]
+after[, c('bs', 'ang') := NULL]
+
+after_summ <- after[, .(mean_bs_corrected_angle = mean(bs_corrected_angle), group=group[1]), by = id]
+# fwrite( after_summ, 'aftereffect_summary.csv')
+
