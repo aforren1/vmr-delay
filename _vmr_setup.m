@@ -65,8 +65,7 @@ function vmr_inner(is_debug, is_short)
     end
 
     if ~is_debug
-        v = x_or_y('What sign, (n)egative or (p)ositive? ', ["n", "p"]);
-        if strcmp("n", v)
+        if strcmp("n", x_or_y('What sign, (n)egative or (p)ositive? ', ["n", "p"]))
             sign = -1;
         else
             sign = 1;
