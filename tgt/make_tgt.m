@@ -40,7 +40,7 @@ No breaks
 
 %}
 
-function tgt = make_tgt(id, group, block_type, is_debug, is_short)
+function tgt = make_tgt(id, group, sign, block_type, is_debug, is_short)
 
 exp_version = 'v1';
 desc = {
@@ -89,8 +89,10 @@ seed = str2num(sprintf('%d,', id)); % seed using participant's id
 % NB!! This is Octave-specific. MATLAB should use rng(), otherwise it defaults to an old RNG impl (see e.g. http://walkingrandomly.com/?p=2945)
 rand('state', seed);
 
-signs = [-1 1];
-sign = signs(randi(2));
+% Originally, we just did randomized assignment. Now the experimenter
+% explicitly specifies
+% signs = [-1 1];
+% sign = signs(randi(2));
 target_angles = [-60 -30 0 30 60] + 270; % should be centered at top of screen
 delay_g1 = [0.5 0.5 0.5 0.5 0.5];
 delay_g2 = [0.1 0.2 0.3 0.4 0.5]; % make sure these are evenly distributed

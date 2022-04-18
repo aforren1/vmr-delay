@@ -26,7 +26,7 @@ function vmr_inner(is_debug, is_short)
     ref_path = fileparts(mfilename('fullpath'));
     addpath(fullfile(ref_path, 'fns')); % add misc things to search path
     addpath(fullfile(ref_path, 'tgt'));
-    settings = struct('id', 'test', 'group', 2, ...
+    settings = struct('id', 'test', 'group', 2, 'sign', 1, ...
                       'base_path', ref_path, 'data_path', fullfile(ref_path, 'data'));
 
     % buglet: device info not filled when deviceClass unspecified?
@@ -62,6 +62,15 @@ function vmr_inner(is_debug, is_short)
 
     if ~is_debug
         settings.group = x_or_y('What group are they in, 1 or 2? ', [1, 2]);
+    end
+
+    if ~is_debug
+        if strcmp("n", x_or_y('What sign, (n)egative or (p)ositive? ', ["n", "p"]))
+            sign = -1;
+        else
+            sign = 1;
+        end
+        settings.sign = sign;
     end
 
     block_type = x_or_y('Is this the veridical practice (p), clamp practice (c) or real thing (r)? ', ["p", "c", "r"]);
