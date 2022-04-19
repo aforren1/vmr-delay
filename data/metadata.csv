@@ -1,9 +1,14 @@
-id,group,notes
-msl000245,1,looked at hand
-msl000246,2,good
-msl000249,1,good
-msl000250,2,two veridical practices
-msl000251,1, two veridical practices; paused on trial 207.
-msl000252,1, two veridical practices; good
-msl000256,2, two veridical practices; good
-msl000257,2, good
+id,group,clamp,notes
+msl000245,1,0,looked at hand
+msl000246,2,0,good
+msl000249,1,0,good
+msl000250,2,0,two veridical practices
+msl000251,1,0,two veridical practices; paused on trial 207.
+msl000252,1,0,two veridical practices; good
+msl000256,2,0,two veridical practices; good
+msl000257,2,0,good
+msl000283,1,0,good
+test,1,+,good
+msl000284,2,+,good
+msl000285,2,+,good
+msl000286,2,+,good
