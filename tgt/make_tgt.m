@@ -96,6 +96,9 @@ rand('state', seed);
 target_angles = [-60 -30 0 30 60] + 270; % should be centered at top of screen
 delay_g1 = [0.5 0.5 0.5 0.5 0.5];
 delay_g2 = [0.1 0.2 0.3 0.4 0.5]; % make sure these are evenly distributed
+delay_g3 = [0.1 0.1 0.1 0.1 0.1];
+delay_g4 = [0.3 0.3 0.3 0.3 0.3];
+
 % so we'll represent each delay once per cycle
 % then each target+delay combo is a total of 5*5=25 combinations (12 reps)
 
@@ -124,8 +127,16 @@ elseif group == 2
     check_delays = false; % TODO: checking both is apparently computationally prohibitive?
     delay = delay_g2;
     extra_delay = 0.2;
+elseif group == 3
+    check_delays = false;
+    delay = delay_g3;
+    extra_delay = 0.4;
+elseif group == 4
+    check_delays = false;
+    delay = delay_g4;
+    extra_delay = 0.2;
 else
-    error('Neither the Blue Angels nor Group 2.');
+    error('Neither the Blue Angels nor Group 2 (nor 3 nor 4).');
 end
 
 block_level.delays = delay;

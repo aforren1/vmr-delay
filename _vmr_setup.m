@@ -61,7 +61,7 @@ function vmr_inner(is_debug, is_short)
     end
 
     if ~is_debug
-        settings.group = x_or_y('What group are they in, 1 or 2? ', [1, 2]);
+        settings.group = x_or_y('What group are they in, 1, 2, 3, or 4? ', [1, 2, 3, 4]);
     end
 
     if ~is_debug
