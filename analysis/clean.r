@@ -1,9 +1,9 @@
 library(RcppSimdJson)
 library(data.table)
-library(signal)
 library(ggplot2)
 source('clean_trial.r')
 
+# msl000296 accidentally reused?
 rad2deg <- function(rad) {(rad * 180) / (pi)}
 deg2rad <- function(deg) {(deg * pi) / (180)}
 
@@ -25,6 +25,7 @@ for (i in 1:length(data_files)) {
     if (raw_dat[['block']][['block_type']] != 'r') {
         next
     }
+    print(data_files[i])
     dat[[i]] <- clean_block(raw_dat[['block']], raw_dat[['trials']])
 }
 
@@ -56,9 +57,11 @@ ggplot(dat_cyc, aes(x=seq, y = dang, colour=label)) +
   geom_point(size=2) +
   labs(x = 'Cycle (5 trials)', y = 'Baseline-corrected error (deg)') +
   theme_bw() + 
-  facet_wrap(~mega_label, ncol=2)
+  facet_wrap(~mega_label, ncol=2) +
+  ylim(c(-20,20))
 
 
+foo <- dat_cyc[, .(mn = mean(dang)), by=c('seq', 'group', 'label')]
 # mean aftereffect per person (baseline subtracted)
 # 
 baseline <- dat[label=='BASELINE_1', .(bs = mean(diff_angle)), by=id]
@@ -71,8 +74,33 @@ after[, bs_corrected_angle := diff_angle - bs]
 after <- after[angs, on = .(id)]
 after[, bs_corrected_angle := bs_corrected_angle * -sign(ang)]
 after[, group := factor(group)]
-after[, c('bs', 'ang') := NULL]
+after[, c('bs') := NULL]
 
-after_summ <- after[, .(mean_bs_corrected_angle = mean(bs_corrected_angle), group=group[1]), by = id]
+after_summ <- after[, .(mean_bs_corrected_angle = mean(bs_corrected_angle), group=group[1], ang=ang[1]), by = id]
+
+##
+avg_foo <- dat
+
+avg_foo <- avg_foo[baseline, on = .(id)]
+avg_foo[, bs_corrected_angle := diff_angle - bs]
+avg_foo[, c('bs', 'online_feedback', 'endpoint_feedback', 'manipulation_type', 'target_dist') := NULL]
+avg_foo <- avg_foo[angs, on = .(id)]
+avg_foo[, bs_corrected_angle := bs_corrected_angle * -sign(ang)]
+avg_foo[, group := factor(group)]
+
+avg_foo <- avg_foo[abs(bs_corrected_angle) < 60]
+
+avg_bar <- avg_foo[, .(mn_bs_corrected_angle = mean(bs_corrected_angle), label = label[1]), by = c('trial', 'group')]
+
+ggplot(avg_bar, aes(x = trial, y = mn_bs_corrected_angle, colour=label)) + 
+  geom_point() +
+  geom_line() +
+  facet_wrap(~group)
 # fwrite( after_summ, 'aftereffect_summary.csv')
+
+# g1 = 0.5 sec delay
+# g2 = variable delay
+# g3 = 0.1 sec delay
+# g4 = 0.3 sec delay
+
 
